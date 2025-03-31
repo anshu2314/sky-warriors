@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Jet Fighter Game</title>
+    
+    <!-- Styles -->
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 20px;
+            font-family: Arial, sans-serif;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .boost-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 32px;
+            color: #ffd700;
+            text-shadow: 0 0 15px #ffd700, 0 0 30px #ffd700;
+            opacity: 0;
+            transition: all 0.3s ease;
+            transform: scale(0.8);
+            z-index: 1000;
+        }
+        .boost-indicator.active {
+            opacity: 1;
+            transform: scale(1);
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Leaderboard Styles */
+        .leaderboard-button {
+            position: absolute;
+            top: 10px;
+            right: 60px;
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 0, 0, 0.5);
+            color: #ffd700;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        .leaderboard-button:hover {
+            background: rgba(0, 0, 0, 0.7);
+            transform: scale(1.1);
+        }
+        .leaderboard-panel {
+            position: absolute;
+            top: 0;
+            right: -300px;
+            width: 250px;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 60px 15px 15px;
+            transition: right 0.3s ease-in-out;
+            z-index: 999;
+        }
+        .leaderboard-panel.active {
+            right: 0;
+        }
+        .leaderboard-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #ffd700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .leaderboard-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .leaderboard-item {
+            padding: 10px 15px;
+            margin: 8px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s ease;
+        }
+        .leaderboard-item:hover {
+            transform: scale(1.02);
+        }
+        .leaderboard-item.current-player {
+            background: rgba(255, 215, 0, 0.2);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        /* Death Screen Styles */
+        .death-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 0, 0, 0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 2000;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        .death-screen.active {
+            display: flex;
+        }
+
+        .death-message {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .death-score {
+            font-size: 24px;
+            margin-bottom: 40px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .respawn-button {
+            padding: 15px 40px;
+            font-size: 24px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .respawn-button:hover {
+            background: #ff6666;
+            transform: scale(1.05);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .respawn-button:active {
+            transform: scale(0.95);
+        }
+    </style>
+
+    <!-- Three.js Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/renderers/CSS2DRenderer.js"></script>
+</head>
+<body>
+    <!-- Game UI -->
+    <div id="hud">
+        Player: <span id="player-name">Player</span> | Health: <span id="health">100</span>% | Score: <span id="score">0</span>
+    </div>
+    <div class="boost-indicator" id="boostIndicator">⚡</div>
+    <button class="leaderboard-button" onclick="toggleLeaderboard()">🏆</button>
+    <div class="leaderboard-panel" id="leaderboardPanel">
+        <div class="leaderboard-title">
+            <span>🏆</span>
+            Leaderboard
+        </div>
+        <ul class="leaderboard-list" id="leaderboardList"></ul>
+    </div>
+
+    <!-- Death Screen -->
+    <div class="death-screen" id="deathScreen">
+        <div class="death-message" id="deathMessage"></div>
+        <div class="death-score" id="deathScore"></div>
+        <button class="respawn-button" onclick="respawnPlayer()">Respawn</button>
+    </div>
+
+    <script>
+        // WebSocket connection
+        let ws;
+        let playerScores = new Map(); // Store player scores
+        let gameStartTime = null;
+
+        function toggleLeaderboard() {
+            const panel = document.getElementById('leaderboardPanel');
+            panel.classList.toggle('active');
+            updateLeaderboard();
+        }
+
+        function updateLeaderboard() {
+            const leaderboardList = document.getElementById('leaderboardList');
+            const currentPlayerName = localStorage.getItem('gameUsername') || 'Player';
+            
+            // Convert Map to array and sort by score
+            const sortedPlayers = Array.from(playerScores.entries())
+                .sort((a, b) => b[1].score - a[1].score);
+            
+            // Clear current leaderboard
+            leaderboardList.innerHTML = '';
+            
+            // Add players to leaderboard
+            sortedPlayers.forEach(([id, data]) => {
+                const item = document.createElement('li');
+                item.className = 'leaderboard-item';
+                if (data.username === currentPlayerName) {
+                    item.classList.add('current-player');
+                }
+                item.innerHTML = `
+                    <span>${data.username}</span>
+                    <span>${data.score}</span>
+                `;
+                leaderboardList.appendChild(item);
+            });
+        }
+
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:8080');
+            
+            ws.onopen = () => {
+                console.log('✅ Connected to game server');
+            };
+
+            ws.onclose = () => {
+                console.log('❌ Disconnected from server - attempting to reconnect...');
+                setTimeout(connectWebSocket, 1000);
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket Error:', error);
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                console.log('📩 Received message:', data.type, data);
+                
+                switch(data.type) {
+                    case 'init':
+                        playerId = data.id;
+                        console.log('🎮 Initialized with player ID:', playerId);
+                        // Initialize player score
+                        playerScores.set(playerId, {
+                            username: localStorage.getItem('gameUsername') || 'Player',
+                            score: 0
+                        });
+                        break;
+                        
+                    case 'players':
+                        console.log('👥 Received existing players:', data.players);
+                        data.players.forEach(player => {
+                            if (player.id !== playerId) {
+                                addOtherPlayer(player);
+                                // Add player to scores
+                                playerScores.set(player.id, {
+                                    username: player.username || 'Unknown Player',
+                                    score: player.score || 0
+                                });
+                            }
+                        });
+                        updateLeaderboard();
+                        break;
+                        
+                    case 'newPlayer':
+                        console.log('➕ New player joined:', data.player);
+                        if (data.player.id !== playerId) {
+                            addOtherPlayer(data.player);
+                            // Add new player to scores
+                            playerScores.set(data.player.id, {
+                                username: data.player.username || 'Unknown Player',
+                                score: data.player.score || 0
+                            });
+                            updateLeaderboard();
+                        }
+                        break;
+                        
+                    case 'playerUpdate':
+                        if (data.id !== playerId) {
+                            updateOtherPlayer(data.id, data.player);
+                            // Update player score
+                            if (playerScores.has(data.id)) {
+                                playerScores.set(data.id, {
+                                    username: data.player.username || 'Unknown Player',
+                                    score: data.player.score || playerScores.get(data.id).score
+                                });
+                                updateLeaderboard();
+                            }
+                        }
+                        break;
+                        
+                    case 'playerLeft':
+                        console.log('➖ Player left:', data.id);
+                        removeOtherPlayer(data.id);
+                        // Remove player from scores
+                        playerScores.delete(data.id);
+                        updateLeaderboard();
+                        break;
+                    
+                    case 'missileHit':
+                        if (data.targetId === playerId) {
+                            // Update health for local player
+                            const healthElement = document.getElementById('health');
+                            const currentHealth = parseInt(healthElement.textContent) || 100;
+                            const newHealth = Math.max(0, currentHealth - data.damage);
+                            healthElement.textContent = newHealth;
+                            
+                            // Visual feedback for the hit player
+                            if (jet) {
+                                jet.traverse((child) => {
+                                    if (child.isMesh) {
+                                        child.material.emissive.setHex(0xff0000);
+                                        setTimeout(() => {
+                                            child.material.emissive.setHex(0x000000);
+                                        }, 200);
+                                    }
+                                });
+                            }
+                            
+                            // Handle death
+                            if (newHealth <= 0) {
+                                handlePlayerDeath();
+                            }
+                        } else {
+                            // Update health for other players
+                            const otherPlayer = otherPlayers.get(data.targetId);
+                            if (otherPlayer) {
+                                // Update the player's data with new health
+                                otherPlayer.data.health = Math.max(0, (otherPlayer.data.health || 100) - data.damage);
+                                
+                                // Visual feedback for the hit player
+                                otherPlayer.model.traverse((child) => {
+                                    if (child.isMesh) {
+                                        child.material.emissive.setHex(0xff0000);
+                                        setTimeout(() => {
+                                            child.material.emissive.setHex(0x000000);
+                                        }, 200);
+                                    }
+                                });
+                                
+                                // Handle death for other player
+                                if (otherPlayer.data.health <= 0) {
+                                    // Reset position for the dead player
+                                    otherPlayer.model.position.set(0, 0.5, 0);
+                                    otherPlayer.model.quaternion.set(0, 0, 0, 1);
+                                    otherPlayer.data.health = 100; // Reset health
+                                    
+                                    // Send respawn event for the dead player
+                                    if (ws.readyState === WebSocket.OPEN) {
+                                        ws.send(JSON.stringify({
+                                            type: 'playerRespawn',
+                                            id: data.targetId
+                                        }));
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                }
+            };
+        }
+
+        // Call the connection function
+        connectWebSocket();
+
+        // Add this after the WebSocket connection setup (after connectWebSocket();)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // Tab is hidden, send final update to server
+                if (ws.readyState === WebSocket.OPEN && jet) {
+                    // Set speed to gradually decrease and ensure descent
+                    jetState.currentSpeed = Math.max(0, jetState.currentSpeed * 0.5);
+                    jetState.isAccelerating = false;
+                    jetState.isBraking = true;
+                    jetState.isBoosting = false;
+                    jetState.verticalSpeed = -jetState.descentRate * 2;
+                    jetState.isAirborne = true;
+                    jetState.targetPitch = -0.2; // Slight downward pitch
+                    
+                    // Create a descent interval
+                    if (!window.descentInterval) {
+                        window.descentInterval = setInterval(() => {
+                            if (document.hidden && jet) {
+                                // Continue descending
+                                jet.position.y = Math.max(
+                                    jetState.minAltitude,
+                                    jet.position.y - jetState.descentRate
+                                );
+                                
+                                // Gradually reduce speed
+                                jetState.currentSpeed = Math.max(0, jetState.currentSpeed * 0.98);
+                                
+                                // Update position based on current direction
+                                const forward = new THREE.Vector3(0, 0, jetState.currentSpeed);
+                                forward.applyQuaternion(jet.quaternion);
+                                jet.position.add(forward);
+                                
+                                // Keep within map boundaries
+                                const halfWidth = jetState.mapWidth / 2 - jetState.boundaryMargin;
+                                const halfLength = jetState.mapLength / 2 - jetState.boundaryMargin;
+                                jet.position.x = Math.max(-halfWidth, Math.min(halfWidth, jet.position.x));
+                                jet.position.z = Math.max(-halfLength, Math.min(halfLength, jet.position.z));
+                                
+                                // Send update to server
+                                ws.send(JSON.stringify({
+                                    type: 'update',
+                                    position: {
+                                        x: jet.position.x,
+                                        y: jet.position.y,
+                                        z: jet.position.z
+                                    },
+                                    quaternion: {
+                                        x: jet.quaternion.x,
+                                        y: jet.quaternion.y,
+                                        z: jet.quaternion.z,
+                                        w: jet.quaternion.w
+                                    },
+                                    rotation: {
+                                        x: jet.rotation.x,
+                                        y: jet.rotation.y,
+                                        z: jet.rotation.z
+                                    },
+                                    speed: jetState.currentSpeed,
+                                    isAirborne: jetState.isAirborne,
+                                    username: localStorage.getItem('gameUsername') || 'Player'
+                                }));
+                                
+                                // If reached ground level, clear interval
+                                if (jet.position.y <= jetState.minAltitude) {
+                                    clearInterval(window.descentInterval);
+                                    window.descentInterval = null;
+                                }
+                            }
+                        }, 50); // Update every 50ms
+                    }
+                }
+            } else {
+                // Tab is visible again, reset controls
+                jetState.isAccelerating = false;
+                jetState.isBraking = false;
+                jetState.isBoosting = false;
+                document.getElementById('boostIndicator').classList.remove('active');
+                
+                // Clear descent interval if it exists
+                if (window.descentInterval) {
+                    clearInterval(window.descentInterval);
+                    window.descentInterval = null;
+                }
+            }
+        });
+
+        let playerId = null;
+        const otherPlayers = new Map();
+        let jetModel = null;  // Store the loaded jet model
+        let pendingPlayers = [];  // Store players that couldn't be added due to model not being loaded
+        let isModelLoaded = false;  // Track if the jet model is loaded
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 5, -15);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+        directionalLight.position.set(10, 20, 10);
+        scene.add(directionalLight);
+
+        // Ground Setup
+        const groundGeometry = new THREE.PlaneGeometry(180, 900);
+        const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22, side: THREE.DoubleSide });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        scene.add(ground);
+
+        // Roads Setup
+        const roadGeometry = new THREE.PlaneGeometry(10, 900);
+        const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x222222, side: THREE.DoubleSide });
+        const road = new THREE.Mesh(roadGeometry, roadMaterial);
+        road.position.y = 0.01;
+        road.rotation.x = -Math.PI / 2;
+        scene.add(road);
+
+        const road2 = road.clone();
+        road2.position.set(35, 0.01, 0);
+        scene.add(road2);
+
+        // Load environment assets
+        const grassLoader = new THREE.GLTFLoader();
+        const cloudLoader = new THREE.GLTFLoader();
+        const treeLoader = new THREE.GLTFLoader();
+        const mountainLoader = new THREE.GLTFLoader();
+
+        // Load grass
+        grassLoader.load('Grass 01.glb', function(gltf) {
+            for (let i = 0; i < 2000; i++) {
+                let grass = gltf.scene.clone();
+                grass.scale.set(200, 200, 200);
+                let x, z;
+                do {
+                    x = (Math.random() * 180) - 90;
+                    z = (Math.random() * 900) - 450;
+                } while (x > -7 && x < 7 || x > 28 && x < 42);
+                grass.position.set(x, 0, z);
+                scene.add(grass);
+            }
+        });
+
+        // Load clouds
+        cloudLoader.load('Cloud.glb', function(gltf) {
+            for (let i = 0; i < 20; i++) {
+                let cloud = gltf.scene.clone();
+                cloud.scale.set(180, 180, 180);
+                cloud.position.y = Math.random() * 40 + 40;
+                let x = (Math.random() * 180) - 90;
+                let z = (Math.random() * 900) - 450;
+                cloud.position.set(x, cloud.position.y, z);
+                scene.add(cloud);
+            }
+        });
+
+        // Load trees
+        treeLoader.load('Birch Tree.glb', function(gltf) {
+            for (let i = 0; i < 60; i++) {
+                let tree = gltf.scene.clone();
+                tree.scale.set(100, 100, 100);
+                let x, z;
+                do {
+                    x = (Math.random() * 180) - 90;
+                    z = (Math.random() * 900) - 450;
+                } while (x > -7 && x < 7 || x > 28 && x < 42);
+                tree.position.set(x, 0, z);
+                scene.add(tree);
+            }
+        });
+
+        // Load mountains
+mountainLoader.load('Mountain.glb', function(gltf) {
+            const mountainScale = 30;
+            const spacing = 40;
+            const mapWidth = 180;
+            const mapHeight = 900;
+            const offset = 15;
+
+    function placeMountains(startX, startZ, count, isHorizontal) {
+        for (let i = 0; i < count; i++) {
+            let mountain = gltf.scene.clone();
+            mountain.scale.set(mountainScale, mountainScale, mountainScale);
+            if (isHorizontal) {
+                mountain.position.set(startX + i * spacing - mapWidth / 2, 0, startZ);
+            } else {
+                mountain.position.set(startX, 0, startZ + i * spacing - mapHeight / 2);
+            }
+            scene.add(mountain);
+                }
+            }
+
+            let countX = Math.ceil(mapWidth / spacing);
+            let countZ = Math.ceil(mapHeight / spacing);
+            
+            placeMountains(0, -mapHeight / 2, countX, true);
+            placeMountains(0, mapHeight / 2, countX, true);
+            placeMountains(-mapWidth / 2, 0, countZ, false);
+            placeMountains(mapWidth / 2, 0, countZ, false);
+        });
+
+        // Initialize variables
+        let jet;
+        let targetRotation = new THREE.Quaternion();
+        let mouseX = 0;
+        let mouseY = 0;
+        let targetYaw = 0;
+        let targetPitch = 0;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+
+        // Physics constants
+        const GRAVITY = -9.81;
+        const AIR_DENSITY = 1.225;
+        const GROUND_EFFECT_HEIGHT = 5;
+
+        // Jet state
+        const jetState = {
+            // Basic flight parameters
+            speed: 0,
+            verticalSpeed: 0,
+            roll: 0,
+            pitch: 0,
+            yaw: 0,
+            throttle: 0,
+            
+            // Enhanced physics parameters
+            velocity: new THREE.Vector3(0, 0, 0),
+            accelerationRate: 0.007,
+            decelerationRate: 0.008,
+            groundAccelerationRate: 0.01,
+            naturalDeceleration: 0.004,
+            lift: 0,
+            drag: 0,
+            thrust: 0,
+            angleOfAttack: 0,
+            
+            // Aircraft characteristics
+            maxSpeed: 2.5,
+            minSpeed: 0.1,
+            stallSpeed: 0.3,
+            maxThrust: 1.0,
+            liftCoefficient: 0.6,
+            dragCoefficient: 0.12,
+            mass: 1000,
+            wingArea: 30,
+            
+            // Boost parameters
+            isBoosting: false,
+            boostMultiplier: 1.0,
+            maxBoostMultiplier: 2.0,
+            boostAccelerationRate: 0.004,
+            
+            // Flight envelope
+            maxPitchAngle: Math.PI / 3,
+            maxRollAngle: Math.PI / 4,
+            minAltitude: 0.5,
+            maxAltitude: 100,
+            isAirborne: false,
+            takeoffSpeed: 0.3,
+            currentSpeed: 0,
+            mouseSensitivity: 0.8,
+            
+            // Map boundaries
+            mapWidth: 180,
+            mapLength: 900,
+            boundaryMargin: 10,
+            
+            // Speed control
+            isAccelerating: false,
+            isBraking: false,
+            
+            // New parameters for improved control
+            turnSpeed: 0.08,
+            rollSpeed: 0.05,
+            pitchSpeed: 0.15,
+            targetPitch: 0,
+            currentPitch: 0,
+            targetYaw: 0,
+            currentYaw: 0,
+            rollReturnSpeed: 0.1,  // Speed at which roll returns to center
+            yawReturnSpeed: 0.05,  // Speed at which yaw returns to center
+            
+            // Weapon System
+            weapons: {
+                // Normal missile properties
+                missile: {
+                    cooldown: false,
+                    cooldownTime: 400, // 0.4 seconds
+                    speed: 4,         // 4 units per frame
+                    damage: 25,       // 25% damage
+                    scoreBonus: 25    // Score for hitting
+                },
+                // Special attack properties
+                special: {
+                    cooldown: false,
+                    cooldownTime: 20000, // 20 seconds
+                    speed: 3,           // Slightly slower but more powerful
+                    damage: 60,         // 60% damage
+                    scoreBonus: 50      // More score for special attack hits
+                }
+            },
+            descentRate: 0.02
+        };
+
+        // Load jet model
+        const loader = new THREE.GLTFLoader();
+        loader.load('chengdu_j-36.glb', function(gltf) {
+            console.log('✈️ Loading jet model');
+            jet = gltf.scene;
+            // Create a proper deep clone for other players
+            jetModel = gltf.scene.clone();
+            
+            // Apply materials and properties to both models
+            const setupModel = (model) => {
+                model.traverse((child) => {
+                    if (child.isMesh) {
+                        child.material = child.material.clone();
+                        child.material.metalness = 0.8;
+                        child.material.roughness = 0.2;
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+            };
+            
+            setupModel(jet);
+            setupModel(jetModel);
+            
+            jet.scale.set(0.85, 0.85, 0.85);
+            jet.position.set(0, 0.5, 0);
+            jet.rotation.y = Math.PI;
+            
+            scene.add(jet);
+            console.log('✅ Jet model loaded and added to scene');
+            isModelLoaded = true;
+            
+            // Add any pending players
+            while (pendingPlayers.length > 0) {
+                const playerData = pendingPlayers.pop();
+                addOtherPlayer(playerData);
+            }
+            
+            animate();
+        });
+
+        // Mouse controls
+        document.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
+            mouseY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+            
+            jetState.targetPitch = -mouseY * Math.PI * 0.25;
+            
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
+
+        // Add mouse click for missiles
+        document.addEventListener('mousedown', (e) => {
+            if (e.button === 0) { // Left click
+                fireMissile(false);
+            } else if (e.button === 2) { // Right click
+                fireMissile(true);
+            }
+        });
+
+        // Prevent context menu on right click
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+
+        // Keyboard controls
+        document.addEventListener("keydown", (e) => {
+            switch(e.code) {
+                case "Space":
+                    fireMissile(false);
+                    break;
+                case "ControlLeft":
+                case "ControlRight":
+                    fireMissile(true);
+                    break;
+                case "ShiftLeft":
+                case "ShiftRight":
+                    jetState.isBoosting = true;
+                    const boostIndicator = document.getElementById('boostIndicator');
+                    boostIndicator.classList.add('active');
+                    break;
+                    
+                case "KeyW":
+                case "ArrowUp":
+                    jetState.isAccelerating = true;
+                    jetState.isBraking = false;
+                    const accelRate = jetState.isAirborne ? 
+                        jetState.accelerationRate : 
+                        jetState.groundAccelerationRate;
+                    
+                    const finalAccelRate = accelRate * (1 + (jetState.boostMultiplier - 1) * 0.5);
+                    
+                    jetState.currentSpeed = Math.min(
+                        jetState.currentSpeed + finalAccelRate,
+                        jetState.maxSpeed * jetState.boostMultiplier
+                    );
+                    
+                    if (!jetState.isAirborne && 
+                        jetState.currentSpeed >= jetState.takeoffSpeed && 
+                        jetState.targetPitch > 0.1) {
+                        jetState.verticalSpeed = 0.4;
+                        jetState.isAirborne = true;
+                        jetState.angleOfAttack = 0.3;
+                    }
+                    break;
+                    
+                case "KeyS":
+                case "ArrowDown":
+                    jetState.isAccelerating = false;
+                    jetState.isBraking = true;
+                    jetState.currentSpeed = Math.max(
+                        jetState.currentSpeed - jetState.decelerationRate,
+                        0
+                    );
+                    break;
+                    
+                case "KeyA":
+                case "ArrowLeft":
+                    if (jetState.isAirborne) {
+                        jetState.roll = Math.min(jetState.roll + jetState.rollSpeed, jetState.maxRollAngle);
+                        jetState.targetYaw += jetState.turnSpeed;
+                    } else {
+                        jetState.targetYaw += jetState.turnSpeed;
+                    }
+                    break;
+                    
+                case "KeyD":
+                case "ArrowRight":
+                    if (jetState.isAirborne) {
+                        jetState.roll = Math.max(jetState.roll - jetState.rollSpeed, -jetState.maxRollAngle);
+                        jetState.targetYaw -= jetState.turnSpeed;
+                    } else {
+                        jetState.targetYaw -= jetState.turnSpeed;
+                    }
+                    break;
+            }
+        });
+
+        document.addEventListener("keyup", (e) => {
+            switch(e.code) {
+                case "ShiftLeft":
+                case "ShiftRight":
+                    jetState.isBoosting = false;
+                    const boostIndicator = document.getElementById('boostIndicator');
+                    boostIndicator.classList.remove('active');
+                    break;
+                case "KeyW":
+                case "ArrowUp":
+                    jetState.isAccelerating = false;
+                    break;
+                case "KeyS":
+                case "ArrowDown":
+                    jetState.isBraking = false;
+                    break;
+                case "KeyA":
+                case "ArrowLeft":
+                case "KeyD":
+                case "ArrowRight":
+                    if (jetState.isAirborne) {
+                        // Start returning to center
+                        jetState.roll *= 0.95;
+                        if (Math.abs(jetState.roll) < 0.01) jetState.roll = 0;
+                        
+                        // Return yaw to center
+                        const yawDiff = jetState.targetYaw - jetState.currentYaw;
+                        if (Math.abs(yawDiff) > 0.01) {
+                            jetState.targetYaw -= Math.sign(yawDiff) * jetState.yawReturnSpeed;
+                        }
+                    }
+                    break;
+            }
+        });
+
+        // Missile system
+        function createMissile(isSpecial = false) {
+            let missile;
+            
+            if (isSpecial) {
+                // Special attack - larger blue sphere
+                const sphereGeometry = new THREE.SphereGeometry(0.8, 32, 32); // Doubled size from 0.4 to 0.8
+                const sphereMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0x0088ff,
+                    emissive: 0x0044ff,
+                    metalness: 0.8,
+                    roughness: 0.2
+                });
+                missile = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            } else {
+                // Normal missile - thicker red cylinder
+                const missileGeometry = new THREE.CylinderGeometry(0.35, 0.35, 5); // Increased thickness from 0.25 to 0.35
+                const missileMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0xff0000,
+                    emissive: 0xff4444,
+                    metalness: 0.8,
+                    roughness: 0.2
+                });
+                missile = new THREE.Mesh(missileGeometry, missileMaterial);
+            }
+            
+            // Position missile at the front of the jet
+            const forward = new THREE.Vector3(0, 0, 3); // Move forward by 3 units
+            forward.applyQuaternion(jet.quaternion);
+            missile.position.copy(jet.position).add(forward);
+            missile.quaternion.copy(jet.quaternion);
+            
+            // Add missile properties
+            missile.isSpecial = isSpecial;
+            missile.speed = isSpecial ? jetState.weapons.special.speed : jetState.weapons.missile.speed;
+            missile.damage = isSpecial ? jetState.weapons.special.damage : jetState.weapons.missile.damage;
+            missile.scoreBonus = isSpecial ? jetState.weapons.special.scoreBonus : jetState.weapons.missile.scoreBonus;
+            missile.ownerId = playerId;
+            
+            scene.add(missile);
+            return missile;
+        }
+
+        const missiles = [];
+
+        function fireMissile(isSpecial = false) {
+            if (!jet || !playerId) return;
+            
+            const weaponType = isSpecial ? jetState.weapons.special : jetState.weapons.missile;
+            
+            if (weaponType.cooldown) return;
+            
+            // Create and fire missile
+            const missile = createMissile(isSpecial);
+            missiles.push(missile);
+            
+            // Set cooldown
+            weaponType.cooldown = true;
+            setTimeout(() => {
+                weaponType.cooldown = false;
+            }, weaponType.cooldownTime);
+            
+            // Send missile creation event to server
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'missileFired',
+                    isSpecial: isSpecial,
+                    position: {
+                        x: missile.position.x,
+                        y: missile.position.y,
+                        z: missile.position.z
+                    },
+                    quaternion: {
+                        x: missile.quaternion.x,
+                        y: missile.quaternion.y,
+                        z: missile.quaternion.z,
+                        w: missile.quaternion.w
+                    }
+                }));
+            }
+        }
+
+        function checkMissileCollisions() {
+            for (let i = missiles.length - 1; i >= 0; i--) {
+                const missile = missiles[i];
+                
+                // Move missile forward
+                const forward = new THREE.Vector3(0, 0, missile.speed);
+                forward.applyQuaternion(missile.quaternion);
+                missile.position.add(forward);
+                
+                // Check if missile is out of bounds
+                if (Math.abs(missile.position.x) > jetState.mapWidth / 2 ||
+                    Math.abs(missile.position.z) > jetState.mapLength / 2 ||
+                    missile.position.y < 0 || 
+                    missile.position.y > jetState.maxAltitude) {
+                    scene.remove(missile);
+                    missiles.splice(i, 1);
+                    continue;
+                }
+                
+                // Check collisions with other players
+                otherPlayers.forEach((otherPlayer, id) => {
+                    if (missile.ownerId !== id) {
+                        // Get all meshes in the other player's jet model
+                        const jetParts = [];
+                        otherPlayer.model.traverse((child) => {
+                            if (child.isMesh) {
+                                jetParts.push(child);
+                            }
+                        });
+                        
+                        // Check collision with any part of the jet
+                        let hit = false;
+                        for (const part of jetParts) {
+                            const partWorldPos = new THREE.Vector3();
+                            part.getWorldPosition(partWorldPos);
+                            const distance = missile.position.distanceTo(partWorldPos);
+                            
+                            if (distance < 3) { // Increased hit detection radius for better gameplay
+                                hit = true;
+                                break;
+                            }
+                        }
+                        
+                        if (hit) {
+                            console.log('Hit detected! Missile:', missile.isSpecial ? 'Special' : 'Normal');
+                            handleMissileHit(missile, id);
+                            scene.remove(missile);
+                            missiles.splice(i, 1);
+                            
+                            // Visual feedback for hit
+                            jetParts.forEach(part => {
+                                if (part.material) {
+                                    const originalColor = part.material.color.clone();
+                                    part.material.emissive.setHex(0xff0000);
+                                    setTimeout(() => {
+                                        part.material.emissive.setHex(0x000000);
+                                    }, 200);
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        }
+
+        function handleMissileHit(missile, hitPlayerId) {
+            console.log('Handling missile hit. Damage:', missile.damage, 'Score bonus:', missile.scoreBonus);
+            
+            // Send hit event to server
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'missileHit',
+                    targetId: hitPlayerId,
+                    damage: missile.damage,
+                    isSpecial: missile.isSpecial
+                }));
+                
+                // Update local score for the shooter
+                if (missile.ownerId === playerId) {
+                    let currentScore = parseInt(document.getElementById('score').textContent) || 0;
+                    currentScore += missile.scoreBonus;
+                    document.getElementById('score').textContent = currentScore;
+                    console.log('Score updated:', currentScore);
+                    
+                    // Update player score in the map
+                    if (playerScores.has(playerId)) {
+                        playerScores.set(playerId, {
+                            username: localStorage.getItem('gameUsername') || 'Player',
+                            score: currentScore
+                        });
+                        updateLeaderboard();
+                    }
+                }
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (jet && playerId) {
+                // Update missiles and check collisions
+                checkMissileCollisions();
+                
+                // Handle boost
+                if (jetState.isBoosting) {
+                    jetState.boostMultiplier = Math.min(
+                        jetState.boostMultiplier + jetState.boostAccelerationRate,
+                        jetState.maxBoostMultiplier
+                    );
+                } else {
+                    jetState.boostMultiplier = Math.max(
+                        jetState.boostMultiplier - jetState.boostAccelerationRate,
+                        1.0
+                    );
+                }
+
+                // Natural speed loss
+                if (!jetState.isAccelerating && !jetState.isBraking) {
+                    const speedFactor = jetState.currentSpeed / (jetState.maxSpeed * jetState.boostMultiplier);
+                    const naturalLoss = jetState.naturalDeceleration * (0.5 + speedFactor * 0.5);
+                    jetState.currentSpeed = Math.max(0, jetState.currentSpeed - naturalLoss);
+                }
+                
+                if (jetState.isAirborne) {
+                    const dragFactor = jetState.dragCoefficient * (jetState.currentSpeed / (jetState.maxSpeed * jetState.boostMultiplier));
+                    jetState.currentSpeed *= (1 - dragFactor * 0.01);
+                }
+
+                // Smooth interpolation
+                jetState.currentPitch += (jetState.targetPitch - jetState.currentPitch) * jetState.pitchSpeed;
+                jetState.currentYaw += (jetState.targetYaw - jetState.currentYaw) * jetState.turnSpeed;
+                
+                const euler = new THREE.Euler(jetState.currentPitch, jetState.currentYaw, jetState.roll);
+                targetRotation.setFromEuler(euler);
+                
+                jet.quaternion.slerp(targetRotation, 0.3);
+                
+                const forward = new THREE.Vector3(0, 0, jetState.currentSpeed);
+                forward.applyQuaternion(jet.quaternion);
+                
+                if (jetState.isAirborne) {
+                    const lift = new THREE.Vector3(0, jetState.lift / jetState.mass, 0);
+                    const gravity = new THREE.Vector3(0, GRAVITY * 0.016, 0);
+                    
+                    const movement = forward.clone()
+                        .add(lift)
+                        .add(gravity);
+                    
+                    if (jetState.isAccelerating) {
+                        movement.y += jetState.verticalSpeed;
+                    } else {
+                        jetState.verticalSpeed = Math.max(
+                            -jetState.descentRate,
+                            jetState.verticalSpeed - jetState.descentRate * 0.5
+                        );
+                        movement.y += jetState.verticalSpeed;
+                    }
+                    
+                    jet.position.add(movement);
+                    jet.position.y = Math.max(jetState.minAltitude, Math.min(jetState.maxAltitude, jet.position.y));
+                } else {
+                    jet.position.add(forward);
+                    jet.position.y = jetState.minAltitude;
+                }
+
+                // Map boundaries
+                const halfWidth = jetState.mapWidth / 2 - jetState.boundaryMargin;
+                const halfLength = jetState.mapLength / 2 - jetState.boundaryMargin;
+                
+                jet.position.x = Math.max(-halfWidth, Math.min(halfWidth, jet.position.x));
+                jet.position.z = Math.max(-halfLength, Math.min(halfLength, jet.position.z));
+
+                // Camera follow
+                const idealOffset = new THREE.Vector3(0, 6, -20);
+                const idealLookat = new THREE.Vector3(0, 2, 15);
+                
+                idealOffset.z -= jetState.currentSpeed * 2;
+                idealOffset.y += jetState.currentSpeed * 0.5;
+
+                const offset = idealOffset.clone();
+                offset.applyQuaternion(jet.quaternion);
+                offset.add(jet.position);
+
+                const lookat = idealLookat.clone();
+                lookat.applyQuaternion(jet.quaternion);
+                lookat.add(jet.position);
+
+                camera.position.lerp(offset, 0.1);
+                camera.lookAt(lookat);
+
+                // Send position update to server
+                if (ws.readyState === WebSocket.OPEN) {
+                    // Initialize game start time if not set
+                    if (!gameStartTime) {
+                        gameStartTime = Date.now();
+                    }
+                    
+                    let currentScore = parseInt(document.getElementById('score').textContent) || 0;
+
+                    ws.send(JSON.stringify({
+                        type: 'update',
+                        position: {
+                            x: jet.position.x,
+                            y: jet.position.y,
+                            z: jet.position.z
+                        },
+                        quaternion: {
+                            x: jet.quaternion.x,
+                            y: jet.quaternion.y,
+                            z: jet.quaternion.z,
+                            w: jet.quaternion.w
+                        },
+                        rotation: {
+                            x: jet.rotation.x,
+                            y: jet.rotation.y,
+                            z: jet.rotation.z
+                        },
+                        speed: jetState.currentSpeed,
+                        isAirborne: jetState.isAirborne,
+                        username: localStorage.getItem('gameUsername') || 'Player',
+                        score: currentScore
+                    }));
+                }
+
+                // Update other players' labels
+                otherPlayers.forEach((otherPlayer, id) => {
+                    updateOtherPlayer(id, otherPlayer.data);
+                });
+
+                // Smooth interpolation for roll return
+                if (jetState.isAirborne && !jetState.isAccelerating && !jetState.isBraking) {
+                    jetState.roll *= (1 - jetState.rollReturnSpeed);
+                    if (Math.abs(jetState.roll) < 0.01) jetState.roll = 0;
+                    
+                    // Return yaw to center when not actively turning
+                    const yawDiff = jetState.targetYaw - jetState.currentYaw;
+                    if (Math.abs(yawDiff) > 0.01) {
+                        jetState.targetYaw -= Math.sign(yawDiff) * jetState.yawReturnSpeed;
+                    }
+                }
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initialize player name
+        const playerName = localStorage.getItem('gameUsername') || 'Player';
+        document.getElementById('player-name').textContent = playerName;
+
+        // Update HUD div to include player name
+        document.getElementById('hud').innerHTML = `
+            Player: ${playerName} | Health: <span id="health">100</span>% | Score: <span id="score">0</span>
+        `;
+
+        // Add other player to scene
+        function addOtherPlayer(playerData) {
+            if (!isModelLoaded) {
+                console.warn('⚠️ Cannot add player - jet model not loaded, adding to pending list');
+                pendingPlayers.push(playerData);
+                return;
+            }
+            
+            // Check if player already exists
+            if (otherPlayers.has(playerData.id)) {
+                console.log('Player already exists, updating instead:', playerData.id);
+                updateOtherPlayer(playerData.id, playerData);
+                return;
+            }
+            
+            console.log('➕ Adding player:', playerData);
+            
+            const otherJet = jetModel.clone();
+            otherJet.scale.set(0.85, 0.85, 0.85);
+            otherJet.position.set(
+                playerData.position ? playerData.position.x : 0,
+                playerData.position ? playerData.position.y : 0.5,
+                playerData.position ? playerData.position.z : 0
+            );
+            
+            // Create quaternion from rotation data
+            if (playerData.quaternion) {
+                otherJet.quaternion.set(
+                    playerData.quaternion.x,
+                    playerData.quaternion.y,
+                    playerData.quaternion.z,
+                    playerData.quaternion.w
+                );
+            } else if (playerData.rotation) {
+                otherJet.rotation.set(
+                    playerData.rotation.x,
+                    playerData.rotation.y,
+                    playerData.rotation.z
+                );
+            }
+            
+            // Add player name label with improved visibility
+            const label = document.createElement('div');
+            label.className = 'player-label';
+            label.textContent = playerData.username || 'Unknown Player';
+            label.style.position = 'absolute';
+            label.style.color = 'white';
+            label.style.fontSize = '20px';
+            label.style.fontFamily = 'Arial';
+            label.style.textShadow = '2px 2px 4px black';
+            label.style.padding = '5px';
+            label.style.backgroundColor = 'rgba(0,0,0,0.5)';
+            label.style.borderRadius = '5px';
+            label.style.zIndex = '1000';
+            document.body.appendChild(label);
+            
+            otherPlayers.set(playerData.id, {
+                model: otherJet,
+                label: label,
+                data: playerData,
+                lastUpdate: Date.now()
+            });
+            
+            scene.add(otherJet);
+            console.log('✅ Player added successfully:', playerData.id);
+        }
+
+        // Update other player position and rotation
+        function updateOtherPlayer(id, playerData) {
+            const otherPlayer = otherPlayers.get(id);
+            if (otherPlayer) {
+                // Smooth position interpolation
+                const targetPos = new THREE.Vector3(
+                    playerData.position.x,
+                    playerData.position.y,
+                    playerData.position.z
+                );
+                otherPlayer.model.position.lerp(targetPos, 0.2);
+
+                // Smooth rotation interpolation
+                if (playerData.quaternion) {
+                    const targetQuat = new THREE.Quaternion(
+                        playerData.quaternion.x,
+                        playerData.quaternion.y,
+                        playerData.quaternion.z,
+                        playerData.quaternion.w
+                    );
+                    otherPlayer.model.quaternion.slerp(targetQuat, 0.2);
+                } else {
+                    const euler = new THREE.Euler(
+                        playerData.rotation.x,
+                        playerData.rotation.y,
+                        playerData.rotation.z
+                    );
+                    const targetQuat = new THREE.Quaternion().setFromEuler(euler);
+                    otherPlayer.model.quaternion.slerp(targetQuat, 0.2);
+                }
+                
+                // Update player data
+                otherPlayer.data = playerData;
+                otherPlayer.lastUpdate = Date.now();
+                
+                // Update label position
+                const vector = new THREE.Vector3();
+                otherPlayer.model.getWorldPosition(vector);
+                vector.project(camera);
+                
+                const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                const y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
+                
+                otherPlayer.label.style.transform = `translate(${x}px, ${y}px)`;
+            }
+        }
+
+        // Remove other player from scene
+        function removeOtherPlayer(id) {
+            const otherPlayer = otherPlayers.get(id);
+            if (otherPlayer) {
+                scene.remove(otherPlayer.model);
+                otherPlayer.label.remove();
+                otherPlayers.delete(id);
+            }
+        }
+
+        function handlePlayerDeath() {
+            // Show death screen
+            const deathScreen = document.getElementById('deathScreen');
+            const deathMessage = document.getElementById('deathMessage');
+            const deathScore = document.getElementById('deathScore');
+            const playerName = localStorage.getItem('gameUsername') || 'Player';
+            const finalScore = parseInt(document.getElementById('score').textContent) || 0;
+
+            deathMessage.textContent = `${playerName} Died`;
+            deathScore.textContent = `Final Score: ${finalScore}`;
+            deathScreen.classList.add('active');
+
+            // Reset health
+            document.getElementById('health').textContent = '100';
+            
+            // Reset position
+            if (jet) {
+                jet.position.set(0, 0.5, 0);
+                jet.quaternion.set(0, 0, 0, 1);
+                jetState.currentSpeed = 0;
+                jetState.isAirborne = false;
+            }
+            
+            // Send respawn event
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'playerRespawn',
+                    id: playerId
+                }));
+            }
+        }
+
+        function respawnPlayer() {
+            // Hide death screen
+            const deathScreen = document.getElementById('deathScreen');
+            deathScreen.classList.remove('active');
+
+            // Reset health
+            document.getElementById('health').textContent = '100';
+            
+            // Reset position
+            if (jet) {
+                jet.position.set(0, 0.5, 0);
+                jet.quaternion.set(0, 0, 0, 1);
+                jetState.currentSpeed = 0;
+                jetState.isAirborne = false;
+            }
+            
+            // Send respawn event
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'playerRespawn',
+                    id: playerId
+                }));
+            }
+        }
+    </script>
+</body>
+</html>
