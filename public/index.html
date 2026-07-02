@@ -1,144 +1,324 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+        // Dynamically load analytics and ad networks ONLY when hosted online (prevents local file:// hangs)
+        if (window.location.protocol !== 'file:') {
+            // Google tag (gtag.js)
+            const gtagScript = document.createElement('script');
+            gtagScript.async = true;
+            gtagScript.src = "https://www.googletagmanager.com/gtag/js?id=G-405QVBXM5K";
+            document.head.appendChild(gtagScript);
+
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-405QVBXM5K');
+
+            // Adsterra Head script
+            const adScript = document.createElement('script');
+            adScript.async = true;
+            adScript.src = "https://pl27596314.revenuecpmgate.com/48/7f/85/487f85dc405917c889493ba77b9eb8d9.js";
+            document.head.appendChild(adScript);
+        }
+    </script>
+    <meta name="google-site-verification" content="ykUDjkWJSMjqVOOOM3kptuqwJR3qtLJxdkbDW_fxZ4o" />
     <meta charset="UTF-8">
+    <title>Sky-Warriors 2 – Multiplayer Jet Fighter Game Online</title>
+    <meta name="description" content="Play Sky-Warriors 2, a fast-paced multiplayer jet fighter game. Battle real players online in intense 3D aerial dogfights. No download needed.">
+    <meta name="keywords" content="multiplayer jet fighter game, online jet game, 3D dogfight, sky warriors 2, play fighter jet game, browser air combat game, jet PvP, free jet simulator, fly jets online, aerial shooting game, jet battle online">
+    <meta name="robots" content="index, follow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jet Fighter Game - Login</title>
+    <meta property="og:title" content="Sky-Warriors 2 – Multiplayer Jet Game">
+    <meta property="og:description" content="Join epic jet battles in Sky-Warriors 2, a free online multiplayer air combat game. No downloads. Just enter your name and fly!">
+    <meta property="og:image" content="https://sky-warriors-2.onrender.com/thumbnail.jpg">
+    <meta property="og:url" content="https://sky-warriors-2.onrender.com/">
+    <meta property="og:type" content="website">
+    <link rel="icon" type="image/png" href="favicon-32x32[1].png">
     <style>
+        :root {
+            --neon-cyan: #00ffcc;
+            --neon-magenta: #ff00cc;
+            --bg-dark: #050510;
+        }
+
         body {
             margin: 0;
             padding: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: Arial, sans-serif;
+            font-family: 'Courier New', monospace;
+            background: var(--bg-dark);
+            color: #fff;
+            overflow-x: hidden;
             position: relative;
-            overflow: hidden;
         }
 
         #background-container {
             position: fixed;
             top: 0;
             left: 0;
+            z-index: -2;
             width: 100%;
             height: 100%;
-            z-index: -1;
             overflow: hidden;
+            opacity: 0.65; /* blend image with deep space background */
         }
 
         #moving-background {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 95%;
-            height: auto;
-            animation: moveAndRotate 15s linear infinite;
-            transform-origin: center center;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
-        @keyframes moveAndRotate {
-            0% {
-                transform: translate(-50%, -50%) scaleX(1);
-            }
-            49% {
-                transform: translate(-150%, -50%) scaleX(1);
-            }
-            50% {
-                transform: translate(-150%, -50%) scaleX(-1);
-            }
-            99% {
-                transform: translate(-50%, -50%) scaleX(-1);
-            }
-            100% {
-                transform: translate(-50%, -50%) scaleX(1);
-            }
+        /* Animated Grid Overlay */
+        #grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                linear-gradient(rgba(0, 255, 204, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 204, 0.06) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 25s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 1000px; }
         }
 
         .login-container {
-            background: rgba(0, 0, 0, 0.7);
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            background: rgba(0, 8, 5, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.2);
+            padding: 2.5rem 2rem;
+            border-radius: 12px;
             text-align: center;
-            color: white;
-            backdrop-filter: blur(5px);
-            width: 90%;
             max-width: 400px;
+            margin: 4rem auto;
+            position: relative;
         }
 
         h1 {
-            margin: 0 0 1.5rem 0;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
             color: #fff;
-            font-size: 2.5rem;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            text-shadow: 0 0 12px var(--neon-cyan);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--neon-cyan);
+            letter-spacing: 4px;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
         }
 
         input {
-            width: 100%;
-            padding: 0.8rem;
+            width: 90%;
+            padding: 0.9rem;
             margin: 0.5rem 0;
-            border: none;
-            border-radius: 5px;
-            background: rgba(255, 255, 255, 0.9);
-            font-size: 1rem;
-            box-sizing: border-box;
+            border: 1px dashed rgba(0, 255, 204, 0.5);
+            border-radius: 6px;
+            font-size: 1.1rem;
+            background: rgba(0, 15, 10, 0.6);
+            color: var(--neon-cyan);
+            text-align: center;
+            font-family: inherit;
+            box-shadow: inset 0 0 10px rgba(0, 255, 204, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.3), inset 0 0 10px rgba(0, 255, 204, 0.2);
         }
 
         button {
-            background: #4CAF50;
-            color: white;
-            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #10b981 0%, #00ffcc 100%);
+            color: #050d0a;
+            padding: 1.1rem 2.5rem;
             border: none;
-            border-radius: 5px;
-            font-size: 1.1rem;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            font-weight: bold;
             cursor: pointer;
-            margin-top: 1rem;
-            transition: background 0.3s ease;
+            margin-top: 1.2rem;
+            font-family: inherit;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+            transition: all 0.3s cubic-bezier(0.1, 0.8, 0.3, 1);
         }
 
         button:hover {
-            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(0, 255, 204, 0.6), 0 0 10px rgba(0, 187, 255, 0.4);
         }
 
-        /* Mobile optimization */
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .login-container p {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #b3c5be;
+            margin-top: 1.5rem;
+        }
+
+        a {
+            color: var(--neon-cyan);
+            text-decoration: none;
+            font-weight: bold;
+            text-shadow: 0 0 3px rgba(0, 255, 204, 0.3);
+        }
+
+        a:hover {
+            text-decoration: underline;
+            color: #fff;
+            text-shadow: 0 0 8px var(--neon-cyan);
+        }
+
+        .section {
+            padding: 2.5rem;
+            max-width: 960px;
+            margin: 2rem auto 5rem auto;
+            background: rgba(4, 8, 12, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px dashed rgba(0, 255, 204, 0.15);
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+        }
+
+        h2, h3 {
+            margin-top: 2.5rem;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 8px rgba(0, 255, 204, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        p {
+            line-height: 1.7;
+            color: #d1dfd9;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        ul li {
+            padding: 0.5rem 0;
+            color: #d1dfd9;
+        }
+
         @media (max-width: 768px) {
-            #moving-background {
-                width: 150%;
-                background-size: cover;
-            }
-            
             .login-container {
-                padding: 1.5rem;
+                margin: 2rem auto;
                 width: 85%;
+                padding: 2rem 1.5rem;
             }
 
             h1 {
-                font-size: 2rem;
+                font-size: 1.8rem;
+            }
+
+            .section {
+                width: 85%;
+                padding: 1.5rem;
             }
         }
     </style>
 </head>
 <body>
+    <!-- Adsterra Body Container (Dynamic loading - online only) -->
+    <div id="container-a3a8d878b52051618cc02007d7be3733"></div>
+    <script>
+        if (window.location.protocol !== 'file:') {
+            const adBodyScript = document.createElement('script');
+            adBodyScript.async = true;
+            adBodyScript.setAttribute('data-cfasync', 'false');
+            adBodyScript.src = "https://pl27596327.revenuecpmgate.com/a3a8d878b52051618cc02007d7be3733/invoke.js";
+            document.body.appendChild(adBodyScript);
+        }
+    </script>
     <div id="background-container">
-        <img src="uff.jpg" id="moving-background" alt="">
+        <img src="sky_warriors_backdrop.png" id="moving-background" alt="multiplayer jet fighter galaxy background">
     </div>
+    <div id="grid-overlay"></div>
 
     <div class="login-container">
-        <h1>Jet Fighter Game</h1>
-        <input type="text" id="username" placeholder="Enter your name" value="Player">
-        <button id="startGame">Start Game</button>
+        <h1>Sky-Warriors 2</h1>
+        <div class="subtitle">MULTIPLAYER 3D JET COMBAT</div>
+        <input type="text" id="username" placeholder="ENTER CALLSIGN" value="PILOT_ONE" maxlength="12">
+        <button id="startGame">Launch Jet</button>
+        <p>Sky-Warriors 2 is a fast-paced online jet fighter game. Battle real players or AI jets in browser-based dogfights. No downloads—just fly!</p>
+        <p><a href="about.html">About Sky-Warriors</a> | <a href="how-to-play.html">How to Play</a> | <a href="features.html">Features</a></p>
+    </div>
+
+    <div class="section">
+        <h2>What is Sky-Warriors 2?</h2>
+        <p>
+            Sky-Warriors 2 is an immersive, real-time multiplayer jet fighter game built for browsers. Fly state-of-the-art fighter jets, engage in intense aerial combat, and dominate the skies in epic 3D battles. Whether you're a casual player or a serious gamer, this fast-loading browser game delivers non-stop jet shooting action.
+        </p>
+
+        <h2>Features of the Game</h2>
+        <ul>
+            <li>✔ Real-time multiplayer aerial dogfights</li>
+            <li>✔ AI enemy jets for offline training</li>
+            <li>✔ High-speed 3D jet controls with mouse and keyboard</li>
+            <li>✔ Jet engine sound, explosions, and immersive sky backgrounds</li>
+            <li>✔ Boss fights, wave-based survival, and HP/gun upgrades</li>
+        </ul>
+
+        <h2>Why Play a Multiplayer Jet Fighter Game Online?</h2>
+        <p>
+            Multiplayer air combat games are thrilling and competitive. Sky-Warriors 2 allows players to test their flying skills against others worldwide without downloading any software. With just a browser, you can experience adrenaline-filled jet battles anytime, anywhere.
+        </p>
+
+        <h3>Jet Fighter Gameplay Overview</h3>
+        <p>
+            Your mission is to shoot down enemies in the sky using powerful fighter jets. Dodge incoming missiles, use aerial maneuvers, and survive waves of AI and player opponents. Every game session is different, giving you non-stop action.
+        </p>
+
+        <h3>Free 3D Air Combat Game in Browser</h3>
+        <p>
+            Enjoy high-quality WebGL graphics without installing anything. Sky-Warriors 2 is fully optimized for web performance, mobile responsiveness, and smooth real-time combat.
+        </p>
+
+        <h3>Best Jet Battle Game With Real-Time Multiplayer</h3>
+        <p>
+            Unlike most free flight simulators, this game offers PvP jet combat in real time. Fly solo or against friends and climb the leaderboard by taking down the most enemy fighters.
+        </p>
+
+        <h2>Keywords This Page Ranks For</h2>
+        <p>
+            multiplayer jet fighter game, online jet battle game, browser air combat, WebGL fighter jet, PvP flight simulator, dogfight game online, jet shooting game, fighter jet multiplayer simulator, fly fighter jets online, 3D jet game free.
+        </p>
     </div>
 
     <script>
-        document.getElementById('startGame').addEventListener('click', function() {
-            const username = document.getElementById('username').value || 'Player';
+        // Set randomized pilot tag by default to maintain dynamic callsigns
+        const callsigns = ['VAV','RAPTOR','MAVERICK','GHOST','VIPER','PHANTOM','COBRA','PUPPET','SLING','RAVEN'];
+        const randomCallsign = callsigns[Math.floor(Math.random() * callsigns.length)] + '_' + Math.floor(100 + Math.random() * 900);
+        document.getElementById('username').value = randomCallsign;
+
+        document.getElementById('startGame').addEventListener('click', function () {
+            let username = document.getElementById('username').value.trim();
+            if (!username) username = randomCallsign;
             localStorage.setItem('gameUsername', username);
             window.location.href = 'game.html';
         });
 
-        document.getElementById('username').addEventListener('keypress', function(e) {
+        document.getElementById('username').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 document.getElementById('startGame').click();
             }
