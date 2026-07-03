@@ -1875,6 +1875,11 @@
                 camera.position.lerp(camPos, jetState.cameraView === 'cockpit' ? 1.0 : 0.1);
                 camera.lookAt(targetLook);
 
+                // Make sky dome follow the camera to prevent flying outside the sky bubble
+                if (sky && camera) {
+                    sky.position.copy(camera.position);
+                }
+
                 // --- JET SHAKE EFFECT ---
                 if (jetState.cameraShake > 0.01) {
                     const shakeX = (Math.random() - 0.5) * jetState.cameraShake * 1.5;
