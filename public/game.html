@@ -316,6 +316,83 @@
             letter-spacing: 2px;
             pointer-events: none;
         }
+
+        /* Target Lock Reticle HUD Overlay */
+        #target-lock {
+            position: absolute;
+            width: 44px;
+            height: 44px;
+            border: 2px dashed #ff3355;
+            border-radius: 4px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            display: none;
+            z-index: 1001;
+            box-shadow: 0 0 8px rgba(255, 51, 85, 0.4);
+        }
+        #target-lock.locked {
+            display: block;
+            animation: lockPulse 0.4s infinite alternate;
+        }
+        @keyframes lockPulse {
+            0% { border-color: #ff3355; transform: translate(-50%, -50%) scale(1.0); }
+            100% { border-color: #ffaa00; transform: translate(-50%, -50%) scale(1.25); }
+        }
+        /* Lock Indicator Tag */
+        #target-lock::after {
+            content: 'LOCK';
+            position: absolute;
+            top: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ff3355;
+            font-size: 10px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-shadow: 0 0 4px #ff3355;
+        }
+
+        /* FPS Crosshair Hitmarker */
+        #hit-marker {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px;
+            height: 24px;
+            pointer-events: none;
+            z-index: 1002;
+            display: none;
+        }
+        #hit-marker::before, #hit-marker::after {
+            content: '';
+            position: absolute;
+            background: #ff3333;
+            box-shadow: 0 0 8px #ff3333;
+        }
+        #hit-marker::before {
+            top: 11px;
+            left: 0;
+            width: 24px;
+            height: 2px;
+            transform: rotate(45deg);
+        }
+        #hit-marker::after {
+            top: 11px;
+            left: 0;
+            width: 24px;
+            height: 2px;
+            transform: rotate(-45deg);
+        }
+        #hit-marker.flash {
+            display: block;
+            animation: hitFlash 0.15s ease-out forwards;
+        }
+        @keyframes hitFlash {
+            0% { transform: translate(-50%, -50%) scale(1.6); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1.0); opacity: 0; }
+        }
     </style>
 
     <!-- Three.js Libraries -->
@@ -331,6 +408,7 @@
         <div class="hud-row"><strong>ALTITUDE:</strong> <span id="hud-alt">0.5</span> FT</div>
         <div class="hud-row"><strong>THROTTLE:</strong> <span id="hud-throttle">0</span>%</div>
         <div class="hud-row"><strong>SPECIAL:</strong> <span id="hud-special">READY</span></div>
+        <div class="hud-row"><strong>CAMERA:</strong> <span id="hud-camera">CHASE</span></div>
     </div>
     
     <div id="controls-help">
@@ -339,13 +417,16 @@
         • W/S to Adjust Throttle<br>
         • SHIFT for Afterburner<br>
         • HOLD LEFT CLICK to Spray<br>
-        • RIGHT CLICK / CTRL to Blast
+        • RIGHT CLICK / CTRL to Blast<br>
+        • C KEY to Switch View
     </div>
     
     <div id="warning-msg">WARNING: LEAVING AIRSPACE!</div>
     
     <div id="crosshair"><div id="crosshair-dot"></div></div>
     <div class="boost-indicator" id="boostIndicator">AFTERBURNER</div>
+    <div id="hit-marker"></div>
+    <div id="target-lock"></div>
     
     <button class="leaderboard-button" onclick="toggleLeaderboard()">🏆</button>
     <div class="leaderboard-panel" id="leaderboardPanel">
@@ -380,6 +461,7 @@
         const particles = [];
         const clouds = [];
         let gameStartTime = null;
+        let currentLockedTarget = null; // Currently targeted enemy jet for homing missile assist
 
         // Scene setup
         const scene = new THREE.Scene();
@@ -746,11 +828,16 @@
             rollSpeed: 0.16,  // Instant banking response
             yawRate: 0.048,   // Sharp bank-steering turn rate
 
+            // View & Target Locks
+            cameraView: 'chase', // 'chase' or 'cockpit'
+            cameraShake: 0.0,
+            lockedTargetId: null,
+
             // Weapon sets
             weapons: {
                 missile: {
                     cooldown: false,
-                    cooldownTime: 250, // 0.25 seconds
+                    cooldownTime: 65, // Faster spray interval (approx 15 shots per sec)
                     speed: 5.5,
                     damage: 20
                 },
@@ -1002,6 +1089,9 @@
             keys[e.code] = true;
             if (e.code === 'Space') fireMissile(false);
             if (e.code === 'ControlLeft' || e.code === 'ControlRight') fireMissile(true);
+            if (e.code === 'KeyC') {
+                jetState.cameraView = jetState.cameraView === 'chase' ? 'cockpit' : 'chase';
+            }
             if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
                 jetState.isBoosting = true;
                 document.getElementById('boostIndicator').classList.add('active');
@@ -1016,7 +1106,6 @@
             }
         });
 
-        // Weapons fire logic
         function fireMissile(isSpecial = false) {
             if (!jet || !playerId) return;
 
@@ -1030,7 +1119,30 @@
             const noseOffset = new THREE.Vector3(0, 0, 3.8);
             noseOffset.applyQuaternion(jet.quaternion);
             missileMesh.position.copy(jet.position).add(noseOffset);
-            missileMesh.quaternion.copy(jet.quaternion);
+            
+            // Firing spread: add a subtle firing spread to ordinary attacks
+            if (!isSpecial) {
+                const spreadX = (Math.random() - 0.5) * 0.024;
+                const spreadY = (Math.random() - 0.5) * 0.024;
+                const spreadZ = (Math.random() - 0.5) * 0.024;
+                const spreadQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(spreadX, spreadY, spreadZ));
+                missileMesh.quaternion.copy(jet.quaternion).multiply(spreadQuat);
+            } else {
+                missileMesh.quaternion.copy(jet.quaternion);
+            }
+
+            // Homing Lock Assignment: if target is locked, steer missile to it
+            let targetPlayerId = null;
+            if (currentLockedTarget) {
+                // Find ID of the target from otherPlayers map
+                for (let [id, other] of otherPlayers.entries()) {
+                    if (other === currentLockedTarget) {
+                        targetPlayerId = id;
+                        break;
+                    }
+                }
+            }
+            missileMesh.targetId = targetPlayerId;
 
             missileMesh.ownerId = playerId;
             missileMesh.isSpecial = isSpecial;
@@ -1039,6 +1151,13 @@
 
             scene.add(missileMesh);
             missiles.push(missileMesh);
+
+            // Trigger firing camera shake (subtle cockpit rattle)
+            if (isSpecial) {
+                jetState.cameraShake = Math.min(jetState.cameraShake + 0.15, 0.32);
+            } else {
+                jetState.cameraShake = Math.min(jetState.cameraShake + 0.04, 0.12);
+            }
 
             // Add cooldown
             weapon.cooldown = true;
@@ -1057,6 +1176,7 @@
                 ws.send(JSON.stringify({
                     type: 'missileFired',
                     isSpecial: isSpecial,
+                    targetId: targetPlayerId, // Sync homing target ID
                     position: { x: missileMesh.position.x, y: missileMesh.position.y, z: missileMesh.position.z },
                     quaternion: { x: missileMesh.quaternion.x, y: missileMesh.quaternion.y, z: missileMesh.quaternion.z, w: missileMesh.quaternion.w }
                 }));
@@ -1130,6 +1250,19 @@
             for (let i = missiles.length - 1; i >= 0; i--) {
                 const missile = missiles[i];
                 
+                // Guided missile homing assist (steer towards targeted player)
+                if (missile.targetId) {
+                    const targetPlayer = otherPlayers.get(missile.targetId);
+                    if (targetPlayer) {
+                        const targetPos = targetPlayer.model.position;
+                        const dirToTarget = new THREE.Vector3().copy(targetPos).sub(missile.position).normalize();
+                        const curDir = new THREE.Vector3(0, 0, 1).applyQuaternion(missile.quaternion);
+                        curDir.lerp(dirToTarget, 0.05).normalize();
+                        const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), curDir);
+                        missile.quaternion.copy(quat);
+                    }
+                }
+
                 // Move missile forward along its heading
                 const forward = new THREE.Vector3(0, 0, missile.speed);
                 forward.applyQuaternion(missile.quaternion);
@@ -1151,7 +1284,8 @@
                     missiles.splice(i, 1);
                     continue;
                 }
-                       // Local bullet hitting other players
+
+                // Local bullet hitting other players
                 if (missile.ownerId === playerId) {
                     otherPlayers.forEach((otherPlayer, id) => {
                         const distance = missile.position.distanceTo(otherPlayer.model.position);
@@ -1160,6 +1294,9 @@
                         const hitRadius = missile.isSpecial ? 8.0 : 6.5;
                         if (distance < hitRadius) {
                             createExplosion(missile.position, 0x00ffcc);
+                            
+                            // Trigger local screen hitmarker feedback
+                            triggerHitmarker();
                             
                             // Send hit to server
                             if (ws && ws.readyState === WebSocket.OPEN) {
@@ -1176,6 +1313,17 @@
                         }
                     });
                 }
+            }
+        }
+
+        // Trigger local HUD hitmarker cross flash
+        function triggerHitmarker() {
+            const hm = document.getElementById('hit-marker');
+            if (hm) {
+                hm.classList.remove('flash');
+                void hm.offsetWidth; // trigger DOM reflow
+                hm.classList.add('flash');
+                setTimeout(() => hm.classList.remove('flash'), 150);
             }
         }
 
@@ -1300,6 +1448,7 @@
             bullet.isSpecial = isSpecial;
             bullet.speed = isSpecial ? jetState.weapons.special.speed : jetState.weapons.missile.speed;
             bullet.damage = isSpecial ? jetState.weapons.special.damage : jetState.weapons.missile.damage;
+            bullet.targetId = data.targetId; // Sync homing target ID
             
             scene.add(bullet);
             missiles.push(bullet);
@@ -1654,22 +1803,95 @@
                     });
                 }
 
-                // Camera follow behind jet (smooth yaw-only chase-cam to lock camera roll and show banking)
+                // --- TARGET ACQUISITION & LOCK-ON (Guided Missile Assist) ---
+                let closestTarget = null;
+                let maxDot = 0.82; // Cone angle ~35 degrees
+                let minDistance = 800; // Max locking distance
+
+                otherPlayers.forEach((other, id) => {
+                    const toTarget = new THREE.Vector3().copy(other.model.position).sub(jet.position);
+                    const distance = toTarget.length();
+                    if (distance < minDistance) {
+                        toTarget.normalize();
+                        const jetForward = new THREE.Vector3(0, 0, 1).applyQuaternion(jet.quaternion);
+                        const dot = jetForward.dot(toTarget);
+                        if (dot > maxDot) {
+                            maxDot = dot;
+                            closestTarget = other;
+                        }
+                    }
+                });
+
+                currentLockedTarget = closestTarget;
+
+                // Sync Target Lock HUD Box
+                const lockBox = document.getElementById('target-lock');
+                if (currentLockedTarget) {
+                    const vector = new THREE.Vector3();
+                    currentLockedTarget.model.getWorldPosition(vector);
+                    vector.project(camera);
+                    
+                    if (vector.z > 1) {
+                        lockBox.classList.remove('locked');
+                    } else {
+                        lockBox.classList.add('locked');
+                        const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                        const y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
+                        lockBox.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+                    }
+                } else {
+                    lockBox.classList.remove('locked');
+                }
+
+                // --- CAMERA VIEW MATRIX CONTROLS ---
                 const yawEuler = new THREE.Euler(0, jetState.yaw, 0);
                 const yawQuat = new THREE.Quaternion().setFromEuler(yawEuler);
                 
-                const relativeCamOffset = new THREE.Vector3(0, 4.5, -17.5);
-                const camPos = relativeCamOffset.applyQuaternion(yawQuat).add(jet.position);
-                
-                const lookatOffset = new THREE.Vector3(0, 1.2, 12);
-                const targetLook = lookatOffset.applyQuaternion(jet.quaternion).add(jet.position);
+                let camPos;
+                let targetLook;
 
-                camera.position.lerp(camPos, 0.1);
+                if (jetState.cameraView === 'cockpit') {
+                    // First Person Cockpit View (placed at the nose, looking forward)
+                    const noseOffset = new THREE.Vector3(0, 0.8, 3.8);
+                    camPos = noseOffset.applyQuaternion(jet.quaternion).add(jet.position);
+
+                    const lookatOffset = new THREE.Vector3(0, 0.8, 50);
+                    targetLook = lookatOffset.applyQuaternion(jet.quaternion).add(jet.position);
+                    
+                    // Hide local jet mesh to prevent blocking cockpit view
+                    jet.visible = false;
+                } else {
+                    // Third Person Chase View (placed behind the jet)
+                    const relativeCamOffset = new THREE.Vector3(0, 4.5, -17.5);
+                    camPos = relativeCamOffset.applyQuaternion(yawQuat).add(jet.position);
+
+                    const lookatOffset = new THREE.Vector3(0, 1.2, 12);
+                    targetLook = lookatOffset.applyQuaternion(jet.quaternion).add(jet.position);
+                    
+                    // Make local jet visible
+                    jet.visible = true;
+                }
+
+                camera.position.lerp(camPos, jetState.cameraView === 'cockpit' ? 1.0 : 0.1);
                 camera.lookAt(targetLook);
+
+                // --- JET SHAKE EFFECT ---
+                if (jetState.cameraShake > 0.01) {
+                    const shakeX = (Math.random() - 0.5) * jetState.cameraShake * 1.5;
+                    const shakeY = (Math.random() - 0.5) * jetState.cameraShake * 1.5;
+                    const shakeZ = (Math.random() - 0.5) * jetState.cameraShake * 1.5;
+                    camera.position.x += shakeX;
+                    camera.position.y += shakeY;
+                    camera.position.z += shakeZ;
+                    
+                    // Decay shake
+                    jetState.cameraShake *= 0.88;
+                }
 
                 // Update HUD Displays
                 document.getElementById('hud-speed').textContent = Math.round(jetState.currentSpeed * 320);
                 document.getElementById('hud-alt').textContent = Math.max(0, Math.round(jet.position.y * 33));
+                document.getElementById('hud-camera').textContent = jetState.cameraView.toUpperCase();
                 
                 const throttlePercent = Math.round((jetState.currentSpeed / jetState.maxSpeed) * 100);
                 document.getElementById('hud-throttle').textContent = Math.min(100, throttlePercent);
