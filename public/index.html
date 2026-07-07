@@ -304,17 +304,20 @@
 
     <div class="login-container">
         <h1>Sky-Warriors 2</h1>
-        <div class="subtitle">MULTIPLAYER 3D JET COMBAT</div>
+        <div class="subtitle">3D JET FIGHTER DOGFIGHTS</div>
         <input type="text" id="username" placeholder="ENTER CALLSIGN" value="PILOT_ONE" maxlength="12">
         
-        <div class="mode-select-container">
-            <button class="mode-btn active" id="mode-multi">Multiplayer</button>
-            <button class="mode-btn" id="mode-single">Single Player</button>
+        <div class="mode-select-container" style="flex-direction: column; width: 100%; gap: 12px; margin: 1.5rem 0;">
+            <button class="mode-btn active" id="mode-multi" style="width: 100%; height: 56px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0.4rem 0;">
+                <span style="font-weight: bold; font-size: 1.05rem; letter-spacing: 1px;">Multiplayer PvP</span>
+                <span id="players-online" style="font-size: 0.72rem; color: #ffaa00; margin-top: 3px; font-weight: normal; letter-spacing: 0.5px; text-shadow: 0 0 4px rgba(255,170,0,0.3);">Loading Pilot Count...</span>
+            </button>
+            <button class="mode-btn" id="mode-single" style="width: 100%; height: 50px; display: flex; justify-content: center; align-items: center;">
+                <span style="font-weight: bold; font-size: 1.05rem; letter-spacing: 1px;">Single Player (AI Bots)</span>
+            </button>
         </div>
         
-        <div class="players-badge" id="players-online">Loading Server Data...</div>
-        
-        <button id="startGame" style="margin-top: 0.2rem; width: 100%;">Launch Jet</button>
+        <button id="startGame" style="margin-top: 0.5rem; width: 100%;">Launch Jet</button>
         <p>Sky-Warriors 2 is a fast-paced online jet fighter game. Battle real players or AI jets in browser-based dogfights. No downloads—just fly!</p>
         <p><a href="about.html">About Sky-Warriors</a> | <a href="how-to-play.html">How to Play</a> | <a href="features.html">Features</a></p>
     </div>

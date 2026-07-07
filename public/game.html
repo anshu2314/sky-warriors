@@ -393,6 +393,121 @@
             0% { transform: translate(-50%, -50%) scale(1.6); opacity: 1; }
             100% { transform: translate(-50%, -50%) scale(1.0); opacity: 0; }
         }
+
+        /* Responsive Mobile Touch HUD Overlay */
+        #mobile-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            height: 180px;
+            z-index: 1005;
+            display: none; /* hidden on desktop, shown via touch detection */
+            pointer-events: none;
+        }
+        #joystick-container {
+            position: absolute;
+            bottom: 20px;
+            left: 30px;
+            width: 120px;
+            height: 120px;
+            pointer-events: auto;
+        }
+        #joystick-base {
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 255, 204, 0.05);
+            border: 2px dashed rgba(0, 255, 204, 0.4);
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.15);
+        }
+        #joystick-handle {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #00ffcc 0%, #10b981 100%);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 12px #00ffcc;
+            transition: transform 0.05s ease;
+        }
+        #mobile-buttons {
+            position: absolute;
+            bottom: 10px;
+            right: 30px;
+            display: grid;
+            grid-template-areas: 
+                "view special"
+                "boost fire";
+            gap: 12px;
+            pointer-events: auto;
+        }
+        .mobile-action-btn {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 255, 204, 0.4);
+            background: rgba(0, 10, 5, 0.75);
+            color: #00ffcc;
+            font-weight: bold;
+            font-family: inherit;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            -webkit-user-select: none;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.15);
+            text-shadow: 0 0 4px #00ffcc;
+            transition: all 0.2s ease;
+        }
+        .mobile-action-btn:active {
+            transform: scale(0.9);
+        }
+        #btn-view {
+            grid-area: view;
+            border-color: rgba(0, 180, 255, 0.5);
+            color: #00b4ff;
+            text-shadow: 0 0 4px #00b4ff;
+        }
+        #btn-special {
+            grid-area: special;
+            border-color: rgba(255, 0, 255, 0.5);
+            color: #ff00ff;
+            text-shadow: 0 0 4px #ff00ff;
+        }
+        #btn-boost {
+            grid-area: boost;
+            border-color: rgba(16, 185, 129, 0.5);
+            color: #10b981;
+            text-shadow: 0 0 4px #10b981;
+        }
+        #btn-boost.active {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: #050d0a;
+            box-shadow: 0 0 15px #10b981;
+            text-shadow: none;
+        }
+        #btn-fire {
+            grid-area: fire;
+            width: 78px;
+            height: 78px;
+            border-color: rgba(255, 80, 0, 0.5);
+            color: #ff5000;
+            text-shadow: 0 0 4px #ff5000;
+            font-size: 13px;
+        }
+        #btn-fire.active {
+            background: linear-gradient(135deg, #ff7700 0%, #ff3300 100%);
+            color: #fff;
+            box-shadow: 0 0 20px #ff3300;
+            text-shadow: none;
+        }
     </style>
 
     <!-- Three.js Libraries -->
@@ -427,6 +542,21 @@
     <div class="boost-indicator" id="boostIndicator">AFTERBURNER</div>
     <div id="hit-marker"></div>
     <div id="target-lock"></div>
+
+    <!-- Mobile Touch Controller Overlay -->
+    <div id="mobile-controls">
+        <div id="joystick-container">
+            <div id="joystick-base">
+                <div id="joystick-handle"></div>
+            </div>
+        </div>
+        <div id="mobile-buttons">
+            <button id="btn-view" class="mobile-action-btn">VIEW</button>
+            <button id="btn-special" class="mobile-action-btn">BLAST</button>
+            <button id="btn-boost" class="mobile-action-btn">BOOST</button>
+            <button id="btn-fire" class="mobile-action-btn">FIRE</button>
+        </div>
+    </div>
     
     <button class="leaderboard-button" onclick="toggleLeaderboard()">🏆</button>
     <div class="leaderboard-panel" id="leaderboardPanel">
@@ -460,6 +590,7 @@
         const missiles = [];
         const particles = [];
         const clouds = [];
+        const gtaExplosions = []; // Dynamic track for premium GTA-style explosion meshes
         let gameStartTime = null;
         let currentLockedTarget = null; // Currently targeted enemy jet for homing missile assist
         let lastNetworkUpdate = 0; // Throttle timer for WS update sends
@@ -1088,7 +1219,7 @@
         const keys = {};
         document.addEventListener('keydown', (e) => {
             keys[e.code] = true;
-            if (e.code === 'Space') fireMissile(false);
+            if (e.code === 'Space') isFiringNormal = true;
             if (e.code === 'ControlLeft' || e.code === 'ControlRight') fireMissile(true);
             if (e.code === 'KeyC') {
                 jetState.cameraView = jetState.cameraView === 'chase' ? 'cockpit' : 'chase';
@@ -1101,11 +1232,124 @@
 
         document.addEventListener('keyup', (e) => {
             keys[e.code] = false;
+            if (e.code === 'Space') isFiringNormal = false;
             if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
                 jetState.isBoosting = false;
                 document.getElementById('boostIndicator').classList.remove('active');
             }
         });
+
+        // --- MOBILE TOUCH CONTROLLER HANDLERS ---
+        const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        if (isTouchDevice) {
+            document.getElementById('mobile-controls').style.display = 'block';
+            // Hide keyboard instructions manual overlay on mobile screen
+            document.getElementById('controls-help').style.display = 'none';
+        }
+
+        // Virtual Joystick Logic
+        const jBase = document.getElementById('joystick-base');
+        const jHandle = document.getElementById('joystick-handle');
+        let jActive = false;
+        let jStartPos = { x: 0, y: 0 };
+
+        jBase.addEventListener('touchstart', (e) => {
+            jActive = true;
+            const touch = e.touches[0];
+            const rect = jBase.getBoundingClientRect();
+            jStartPos = {
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2
+            };
+            updateJoystick(touch.clientX, touch.clientY);
+            e.preventDefault();
+        }, { passive: false });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!jActive) return;
+            const touch = e.touches[0];
+            updateJoystick(touch.clientX, touch.clientY);
+            e.preventDefault();
+        }, { passive: false });
+
+        window.addEventListener('touchend', () => {
+            if (!jActive) return;
+            jActive = false;
+            jHandle.style.left = '50%';
+            jHandle.style.top = '50%';
+            mouseX = 0;
+            mouseY = 0;
+            jetState.targetRoll = 0;
+            jetState.targetPitch = 0;
+        });
+
+        function updateJoystick(clientX, clientY) {
+            let dx = clientX - jStartPos.x;
+            let dy = clientY - jStartPos.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const maxDistance = 45; // pixel bounds limit
+
+            if (distance > maxDistance) {
+                dx = (dx / distance) * maxDistance;
+                dy = (dy / distance) * maxDistance;
+            }
+
+            jHandle.style.left = `calc(50% + ${dx}px)`;
+            jHandle.style.top = `calc(50% + ${dy}px)`;
+
+            // Normalize coordinate steering axes
+            const normX = dx / maxDistance;
+            const normY = dy / maxDistance;
+
+            mouseX = normX;
+            mouseY = normY;
+            jetState.targetRoll = -normX * Math.PI * 0.45;
+            jetState.targetPitch = -normY * Math.PI * 0.28;
+        }
+
+        // Mobile Action Buttons Handlers
+        const btnFire = document.getElementById('btn-fire');
+        const btnBoost = document.getElementById('btn-boost');
+        const btnSpecial = document.getElementById('btn-special');
+        const btnView = document.getElementById('btn-view');
+
+        // HOLD TO FIRE / SPRAY
+        btnFire.addEventListener('touchstart', (e) => {
+            isFiringNormal = true;
+            btnFire.classList.add('active');
+            e.preventDefault();
+        }, { passive: false });
+
+        btnFire.addEventListener('touchend', (e) => {
+            isFiringNormal = false;
+            btnFire.classList.remove('active');
+            e.preventDefault();
+        }, { passive: false });
+
+        // TOGGLE BOOST / AFTERBURNER
+        btnBoost.addEventListener('touchstart', (e) => {
+            jetState.isBoosting = !jetState.isBoosting;
+            if (jetState.isBoosting) {
+                btnBoost.classList.add('active');
+                document.getElementById('boostIndicator').classList.add('active');
+            } else {
+                btnBoost.classList.remove('active');
+                document.getElementById('boostIndicator').classList.remove('active');
+            }
+            e.preventDefault();
+        }, { passive: false });
+
+        // TAP TO BLAST (SPECIAL)
+        btnSpecial.addEventListener('touchstart', (e) => {
+            fireMissile(true);
+            e.preventDefault();
+        }, { passive: false });
+
+        // TAP TO TOGGLE CAMERA VIEW
+        btnView.addEventListener('touchstart', (e) => {
+            jetState.cameraView = jetState.cameraView === 'chase' ? 'cockpit' : 'chase';
+            e.preventDefault();
+        }, { passive: false });
 
         function fireMissile(isSpecial = false) {
             if (!jet || !playerId) return;
@@ -1121,29 +1365,24 @@
             noseOffset.applyQuaternion(jet.quaternion);
             missileMesh.position.copy(jet.position).add(noseOffset);
             
+            // Initial heading: direct towards locked target (radar lock aim assistance) or default forward nose direction
+            if (currentLockedTarget) {
+                const targetPos = currentLockedTarget.model.position;
+                const dir = new THREE.Vector3().copy(targetPos).sub(missileMesh.position).normalize();
+                const lockQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir);
+                missileMesh.quaternion.copy(lockQuat);
+            } else {
+                missileMesh.quaternion.copy(jet.quaternion);
+            }
+
             // Firing spread: add a subtle firing spread to ordinary attacks
             if (!isSpecial) {
                 const spreadX = (Math.random() - 0.5) * 0.024;
                 const spreadY = (Math.random() - 0.5) * 0.024;
                 const spreadZ = (Math.random() - 0.5) * 0.024;
                 const spreadQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(spreadX, spreadY, spreadZ));
-                missileMesh.quaternion.copy(jet.quaternion).multiply(spreadQuat);
-            } else {
-                missileMesh.quaternion.copy(jet.quaternion);
+                missileMesh.quaternion.multiply(spreadQuat);
             }
-
-            // Homing Lock Assignment: if target is locked, steer missile to it
-            let targetPlayerId = null;
-            if (currentLockedTarget) {
-                // Find ID of the target from otherPlayers map
-                for (let [id, other] of otherPlayers.entries()) {
-                    if (other === currentLockedTarget) {
-                        targetPlayerId = id;
-                        break;
-                    }
-                }
-            }
-            missileMesh.targetId = targetPlayerId;
 
             missileMesh.ownerId = playerId;
             missileMesh.isSpecial = isSpecial;
@@ -1246,23 +1485,103 @@
             }
         }
 
+        // Heavy Cinematic Fiery Explosion (GTA-Style) on Jet Destruction
+        function createGTAExplosion(pos) {
+            // 1. Proximity-based camera shake rumble
+            const dist = jet.position.distanceTo(pos);
+            const shakeAmt = Math.max(0, 1.0 - (dist / 950)) * 0.72;
+            jetState.cameraShake = Math.min(jetState.cameraShake + shakeAmt, 0.85);
+
+            // 2. Shockwave Expanding Ring (Torus alignment)
+            const ringGeom = new THREE.RingGeometry(1, 5, 24);
+            ringGeom.rotateX(-Math.PI / 2);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: 0xff4400,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.95,
+                blending: THREE.AdditiveBlending
+            });
+            const ring = new THREE.Mesh(ringGeom, ringMat);
+            ring.position.copy(pos);
+            scene.add(ring);
+
+            // 3. Fireball Cloud Spheres
+            const fireballs = [];
+            const fireballCount = 7;
+            const sphereGeom = new THREE.SphereGeometry(6, 16, 16);
+            for (let i = 0; i < fireballCount; i++) {
+                const color = i === 0 ? 0xffffff : (i < 3 ? 0xffaa00 : 0xff2200);
+                const mat = new THREE.MeshBasicMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: 0.95,
+                    blending: THREE.AdditiveBlending
+                });
+                const sphere = new THREE.Mesh(sphereGeom, mat);
+                // offset position slightly for organic shape
+                sphere.position.copy(pos).add(new THREE.Vector3(
+                    (Math.random() - 0.5) * 12,
+                    (Math.random() - 0.5) * 8 + 3,
+                    (Math.random() - 0.5) * 12
+                ));
+                sphere.scale.setScalar(0.25 + Math.random() * 0.45);
+                scene.add(sphere);
+                fireballs.push({
+                    mesh: sphere,
+                    scaleSpeed: 0.08 + Math.random() * 0.08,
+                    riseSpeed: 0.15 + Math.random() * 0.22
+                });
+            }
+
+            // 4. Parabolic Debris Sparks
+            const debris = [];
+            const debrisCount = 38;
+            const particleGeom = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+            for (let i = 0; i < debrisCount; i++) {
+                const color = Math.random() > 0.45 ? 0xff5500 : 0xffaa00;
+                const mat = new THREE.MeshBasicMaterial({ color: color });
+                const mesh = new THREE.Mesh(particleGeom, mat);
+                mesh.position.copy(pos);
+                
+                // Blast outwards in all directions with a high upward velocity
+                const velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 10,
+                    Math.random() * 7 + 3,
+                    (Math.random() - 0.5) * 10
+                );
+                
+                scene.add(mesh);
+                debris.push({
+                    mesh: mesh,
+                    velocity: velocity,
+                    life: 35 + Math.floor(Math.random() * 25)
+                });
+            }
+
+            // 5. Point Light Flash (Illuminates mountains/skyscrapers dynamically!)
+            let flashLight = null;
+            if (window.location.protocol !== 'file:') {
+                flashLight = new THREE.PointLight(0xff6600, 6.0, 450);
+                flashLight.position.copy(pos).y += 4;
+                scene.add(flashLight);
+            }
+
+            // Push to explosions list tracker
+            gtaExplosions.push({
+                ring: ring,
+                ringScale: 1.0,
+                fireballs: fireballs,
+                debris: debris,
+                light: flashLight,
+                life: 50
+            });
+        }
+
         // Update active projectiles & check hits locally
         function checkMissileCollisions() {
             for (let i = missiles.length - 1; i >= 0; i--) {
                 const missile = missiles[i];
-                
-                // Guided missile homing assist (steer towards targeted player)
-                if (missile.targetId) {
-                    const targetPlayer = otherPlayers.get(missile.targetId);
-                    if (targetPlayer) {
-                        const targetPos = targetPlayer.model.position;
-                        const dirToTarget = new THREE.Vector3().copy(targetPos).sub(missile.position).normalize();
-                        const curDir = new THREE.Vector3(0, 0, 1).applyQuaternion(missile.quaternion);
-                        curDir.lerp(dirToTarget, 0.05).normalize();
-                        const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), curDir);
-                        missile.quaternion.copy(quat);
-                    }
-                }
 
                 // Move missile forward along its heading
                 const forward = new THREE.Vector3(0, 0, missile.speed);
@@ -1543,7 +1862,11 @@
             }
             
             if (targetPos) {
-                createExplosion(targetPos, data.isSpecial ? 0xff00ff : 0xff3300);
+                if (data.newHealth <= 0) {
+                    createGTAExplosion(targetPos);
+                } else {
+                    createExplosion(targetPos, data.isSpecial ? 0xff00ff : 0xff3300);
+                }
             }
 
             // Sync scores
@@ -1595,6 +1918,7 @@
         }
 
         function handlePlayerDeath() {
+            createGTAExplosion(jet.position);
             const deathScreen = document.getElementById('deathScreen');
             const scoreVal = document.getElementById('score').textContent;
             
@@ -1688,9 +2012,10 @@
                     model: botJet,
                     label: label,
                     data: botData,
-                    targetPosition: new THREE.Vector3((Math.random() - 0.5) * 1600, 50 + Math.random() * 200, (Math.random() - 0.5) * 3000),
+                    aiDestination: new THREE.Vector3((Math.random() - 0.5) * 1600, 50 + Math.random() * 200, (Math.random() - 0.5) * 3000),
                     speed: 1.2 + Math.random() * 0.8,
-                    lastFired: 0
+                    lastFired: 0,
+                    isBot: true // Flag to skip network lerping in animate loop
                 };
                 
                 otherPlayers.set(botId, botObj);
@@ -1714,35 +2039,65 @@
                 const distToPlayer = botJet.position.distanceTo(jet.position);
                 const isPlayerDead = parseInt(document.getElementById('health').textContent) <= 0;
                 
-                if (distToPlayer < 600 && !isPlayerDead) {
-                    // Chase mode
+                if (distToPlayer < 750 && !isPlayerDead) {
+                    // Chase mode (Aggressive pursuit)
                     toTarget.copy(jet.position).sub(botJet.position);
                     
-                    // Bot firing logic
+                    // Throttle controller (Slow down if close to player, speed up if far or behind)
+                    if (distToPlayer < 180) {
+                        bot.speed = THREE.MathUtils.lerp(bot.speed, 1.1, 0.05); // brake to stay behind and lock target
+                    } else if (distToPlayer > 400) {
+                        bot.speed = THREE.MathUtils.lerp(bot.speed, 3.2, 0.04); // apply "afterburner boost" to close distance
+                    } else {
+                        bot.speed = THREE.MathUtils.lerp(bot.speed, 2.1, 0.05); // standard chase speed
+                    }
+
+                    // Bot active shooting: sprays every 450ms when pointing generally at player
                     const now = performance.now();
-                    if (distToPlayer < 400 && (now - bot.lastFired > 1400)) {
-                        bot.lastFired = now;
-                        fireBotMissile(bot);
+                    if (distToPlayer < 450 && (now - bot.lastFired > 450)) {
+                        const botForward = new THREE.Vector3(0, 0, 1).applyQuaternion(botJet.quaternion);
+                        const toPlayerNorm = new THREE.Vector3().copy(toTarget).normalize();
+                        const dot = botForward.dot(toPlayerNorm);
+                        if (dot > 0.86) { // pointing generally at player
+                            bot.lastFired = now;
+                            fireBotMissile(bot);
+                        }
                     }
                 } else {
                     // Patrol mode
-                    const distToPatrol = botJet.position.distanceTo(bot.targetPosition);
-                    if (distToPatrol < 100) {
-                        // pick new destination
-                        bot.targetPosition.set(
+                    const distToPatrol = botJet.position.distanceTo(bot.aiDestination);
+                    if (distToPatrol < 120) {
+                        // pick new random destination in sky
+                        bot.aiDestination.set(
                             (Math.random() - 0.5) * 1600,
-                            50 + Math.random() * 220,
+                            80 + Math.random() * 220,
                             (Math.random() - 0.5) * 3000
                         );
                     }
-                    toTarget.copy(bot.targetPosition).sub(botJet.position);
+                    toTarget.copy(bot.aiDestination).sub(botJet.position);
+                    bot.speed = THREE.MathUtils.lerp(bot.speed, 1.4, 0.05); // cruise speed during patrol
                 }
                 
-                // Steering: slerp quaternion towards target vector
+                // Steering & Banking calculations (simulate human pilot roll-and-turn)
                 if (toTarget.lengthSq() > 0.01) {
                     toTarget.normalize();
+                    
+                    // Base target heading quaternion
                     const targetQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), toTarget);
-                    botJet.quaternion.slerp(targetQuat, 0.025); // smooth bot steering rotation
+                    
+                    // Smoothly steer heading (high turn rate of 0.065 matches expert human responses)
+                    botJet.quaternion.slerp(targetQuat, 0.065);
+                    
+                    // Bank (roll) proportional to turning intensity
+                    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(botJet.quaternion);
+                    const turnSign = right.dot(toTarget); // positive turning right, negative turning left
+                    
+                    const targetRoll = -turnSign * Math.PI * 0.4; // Bank up to 72 degrees for high-G banking turns!
+                    bot.currentRoll = THREE.MathUtils.lerp(bot.currentRoll || 0, targetRoll, 0.12);
+                    
+                    // Apply roll on top of steering quaternion
+                    const rollQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), bot.currentRoll);
+                    botJet.quaternion.multiply(rollQuat);
                 }
                 
                 // Move bot forward
@@ -1759,11 +2114,11 @@
                 const limitZ = jetState.mapLength / 2 - 30;
                 if (Math.abs(botJet.position.x) > limitX) {
                     botJet.position.x = Math.sign(botJet.position.x) * limitX;
-                    bot.targetPosition.x *= -0.5; // steer away
+                    bot.aiDestination.x *= -0.5; // steer away
                 }
                 if (Math.abs(botJet.position.z) > limitZ) {
                     botJet.position.z = Math.sign(botJet.position.z) * limitZ;
-                    bot.targetPosition.z *= -0.5; // steer away
+                    bot.aiDestination.z *= -0.5; // steer away
                 }
                 
                 // Update internal position data for label alignment
@@ -1800,7 +2155,7 @@
                 
                 // Reward points to player
                 if (bot.data.health <= 0) {
-                    createExplosion(bot.model.position, 0xff3300);
+                    createGTAExplosion(bot.model.position);
                     
                     // Increment player score
                     const points = isSpecial ? 50 : 25;
@@ -1925,6 +2280,63 @@
                 }
             }
 
+            // Update active GTA Explosions (fireball scales, debris gravity, and point lights)
+            for (let i = gtaExplosions.length - 1; i >= 0; i--) {
+                const exp = gtaExplosions[i];
+                exp.life--;
+
+                // Expand shockwave ring
+                if (exp.ring) {
+                    exp.ringScale += 0.8;
+                    exp.ring.scale.set(exp.ringScale, exp.ringScale, exp.ringScale);
+                    exp.ring.material.opacity = Math.max(0, exp.life / 50);
+                }
+
+                // Expand and float fireballs
+                exp.fireballs.forEach(fb => {
+                    const sc = fb.mesh.scale.x + fb.scaleSpeed;
+                    fb.mesh.scale.setScalar(sc);
+                    fb.mesh.position.y += fb.riseSpeed;
+                    fb.mesh.material.opacity = Math.max(0, (exp.life / 50) - 0.1);
+                });
+
+                // Debris movement + gravity parabolic arcs
+                exp.debris.forEach(deb => {
+                    deb.velocity.y -= 0.12; // apply gravity pull
+                    deb.velocity.multiplyScalar(0.96); // drag deceleration
+                    deb.mesh.position.add(deb.velocity);
+                    deb.mesh.scale.multiplyScalar(0.97); // shrink
+                });
+
+                // Point Light decay
+                if (exp.light) {
+                    exp.light.intensity *= 0.88;
+                }
+
+                // Cleanup
+                if (exp.life <= 0) {
+                    if (exp.ring) {
+                        scene.remove(exp.ring);
+                        exp.ring.material.dispose();
+                        exp.ring.geometry.dispose();
+                    }
+                    exp.fireballs.forEach(fb => {
+                        scene.remove(fb.mesh);
+                        fb.mesh.material.dispose();
+                        fb.mesh.geometry.dispose();
+                    });
+                    exp.debris.forEach(deb => {
+                        scene.remove(deb.mesh);
+                        deb.mesh.material.dispose();
+                        deb.mesh.geometry.dispose();
+                    });
+                    if (exp.light) {
+                        scene.remove(exp.light);
+                    }
+                    gtaExplosions.splice(i, 1);
+                }
+            }
+
             // Move & check projectile collisions
             checkMissileCollisions();
 
@@ -1995,6 +2407,26 @@
                 // Banking-turns: roll tilt directly influences yaw heading
                 if (Math.abs(jetState.roll) > 0.05) {
                     jetState.yaw += jetState.roll * jetState.yawRate;
+                }
+
+                // Radar lock aim assistance: magnetically pulls nose towards locked enemy jet coordinates ONLY when actively firing/shooting!
+                if (currentLockedTarget && isFiringNormal) {
+                    const targetPos = currentLockedTarget.model.position;
+                    const toTarget = new THREE.Vector3().copy(targetPos).sub(jet.position);
+                    
+                    // Calculate target heading angles (horizontal heading yaw, vertical elevation pitch)
+                    const targetYaw = Math.atan2(toTarget.x, toTarget.z);
+                    const horizDist = Math.sqrt(toTarget.x * toTarget.x + toTarget.z * toTarget.z);
+                    const targetPitch = Math.atan2(toTarget.y, horizDist);
+                    
+                    // Interpolate yaw heading addressing wrap-around (wrap -PI to PI)
+                    let yawDiff = targetYaw - jetState.yaw;
+                    while (yawDiff < -Math.PI) yawDiff += Math.PI * 2;
+                    while (yawDiff > Math.PI) yawDiff -= Math.PI * 2;
+                    
+                    // Blend pull corrections (5.5% pull rate provides strong but smooth magnetic look)
+                    jetState.yaw += yawDiff * 0.055;
+                    jetState.pitch += (targetPitch - jetState.pitch) * 0.055;
                 }
 
                 // Apply pitch/yaw/roll rotations to Quaternion
@@ -2174,12 +2606,14 @@
                 // Skip bot animation update if bot is dead (to keep it hidden)
                 if (other.data && other.data.health <= 0) return;
 
-                // Smoothly slide positions and rotations
-                if (other.targetPosition) {
-                    other.model.position.lerp(other.targetPosition, 0.15);
-                }
-                if (other.targetQuaternion) {
-                    other.model.quaternion.slerp(other.targetQuaternion, 0.15);
+                // Smoothly slide positions and rotations (only for network players, not AI bots!)
+                if (!other.isBot) {
+                    if (other.targetPosition) {
+                        other.model.position.lerp(other.targetPosition, 0.15);
+                    }
+                    if (other.targetQuaternion) {
+                        other.model.quaternion.slerp(other.targetQuaternion, 0.15);
+                    }
                 }
 
                 const vector = new THREE.Vector3();
