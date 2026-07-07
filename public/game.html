@@ -462,6 +462,7 @@
         const clouds = [];
         let gameStartTime = null;
         let currentLockedTarget = null; // Currently targeted enemy jet for homing missile assist
+        let lastNetworkUpdate = 0; // Throttle timer for WS update sends
 
         // Scene setup
         const scene = new THREE.Scene();
@@ -1285,12 +1286,13 @@
                     continue;
                 }
 
-                // Local bullet hitting other players
+                // Local bullet hitting other players (bots or real players)
                 if (missile.ownerId === playerId) {
                     otherPlayers.forEach((otherPlayer, id) => {
+                        // Skip if bot/player is dead/respawning
+                        if (otherPlayer.data && otherPlayer.data.health <= 0) return;
+
                         const distance = missile.position.distanceTo(otherPlayer.model.position);
-                        
-                        // Expanded hitbox radius to match the giant projectile sizes
                         const hitRadius = missile.isSpecial ? 8.0 : 6.5;
                         if (distance < hitRadius) {
                             createExplosion(missile.position, 0x00ffcc);
@@ -1298,7 +1300,7 @@
                             // Trigger local screen hitmarker feedback
                             triggerHitmarker();
                             
-                            // Send hit to server
+                            // Send hit to server (if online) or process offline damage directly
                             if (ws && ws.readyState === WebSocket.OPEN) {
                                 ws.send(JSON.stringify({
                                     type: 'missileHit',
@@ -1306,12 +1308,46 @@
                                     damage: missile.damage,
                                     isSpecial: missile.isSpecial
                                 }));
+                            } else {
+                                handleOfflineDamage(id, missile.damage, missile.isSpecial);
                             }
                             
                             scene.remove(missile);
                             missiles.splice(i, 1);
                         }
                     });
+                } else {
+                    // Bot or other player bullet hitting the local player
+                    const isPlayerDead = parseInt(document.getElementById('health').textContent) <= 0;
+                    if (!isPlayerDead) {
+                        const distance = missile.position.distanceTo(jet.position);
+                        const hitRadius = missile.isSpecial ? 8.0 : 6.5;
+                        if (distance < hitRadius) {
+                            createExplosion(missile.position, 0xff3355);
+                            
+                            // Apply damage to local player
+                            const healthElement = document.getElementById('health');
+                            let currentHealth = parseInt(healthElement.textContent) || 100;
+                            currentHealth = Math.max(0, currentHealth - missile.damage);
+                            healthElement.textContent = currentHealth;
+                            
+                            // Visual feedback
+                            const val = document.getElementById('health-value');
+                            val.style.color = '#ff3333';
+                            setTimeout(() => { val.style.color = '#00ffcc'; }, 300);
+                            flashJetRed(jet);
+                            
+                            // Camera shake recoil
+                            jetState.cameraShake = Math.min(jetState.cameraShake + 0.25, 0.5);
+
+                            if (currentHealth <= 0) {
+                                handlePlayerDeath();
+                            }
+                            
+                            scene.remove(missile);
+                            missiles.splice(i, 1);
+                        }
+                    }
                 }
             }
         }
@@ -1329,6 +1365,21 @@
 
         // WebSocket multiplayer sync
         function connectWebSocket() {
+            // Check if user selected Single Player (Offline Training with AI Bots)
+            const gameMode = localStorage.getItem('gameMode') || 'multi';
+            if (gameMode === 'single') {
+                console.log('🎮 Single Player Offline Mode active. Initializing AI Bot dogfights.');
+                playerId = 'offline_player_' + Math.random().toString(36).substr(2, 5);
+                playerScores.set(playerId, {
+                    username: getUsername(),
+                    score: 0
+                });
+                
+                // Spawn the offline AI bots
+                setTimeout(spawnOfflineBots, 500);
+                return;
+            }
+
             // Check if running locally as a file (offline fallback)
             if (window.location.protocol === 'file:') {
                 console.warn('⚠️ Running locally as a file. Multiplayer WebSocket is disabled.');
@@ -1337,6 +1388,8 @@
                     username: getUsername(),
                     score: 0
                 });
+                // Spawn bots as offline training sandbox
+                setTimeout(spawnOfflineBots, 500);
                 return;
             }
 
@@ -1585,6 +1638,199 @@
             });
         }
 
+        // --- OFFLINE SINGLE PLAYER BOT AI SYSTEM ---
+        const botNames = ['BOT_VIPER', 'BOT_MAVERICK', 'BOT_RAPTOR', 'BOT_GHOST', 'BOT_RAVEN'];
+        const bots = [];
+
+        function spawnOfflineBots() {
+            botNames.forEach((name, index) => {
+                const botId = 'offline_bot_' + index;
+                
+                // Spawn procedural model
+                const botJet = createProceduralJet(true); // isEnemy = true
+                botJet.scale.set(0.9, 0.9, 0.9);
+                
+                // Random position
+                const bx = (Math.random() - 0.5) * 1200;
+                const by = 80 + Math.random() * 180;
+                const bz = (Math.random() - 0.5) * 2400;
+                botJet.position.set(bx, by, bz);
+                botJet.rotation.y = Math.random() * Math.PI * 2;
+                
+                // Text Label DOM Element overlay
+                const label = document.createElement('div');
+                label.className = 'player-label';
+                label.textContent = name;
+                label.style.position = 'absolute';
+                label.style.color = '#ff3355';
+                label.style.fontSize = '12px';
+                label.style.padding = '4px 8px';
+                label.style.backgroundColor = 'rgba(10, 0, 5, 0.8)';
+                label.style.border = '1px solid #ff3355';
+                label.style.borderRadius = '4px';
+                label.style.zIndex = '998';
+                document.body.appendChild(label);
+                
+                // Initial data structure matching other player details
+                const botData = {
+                    id: botId,
+                    username: name,
+                    health: 100,
+                    score: 0,
+                    position: { x: bx, y: by, z: bz },
+                    quaternion: { x: botJet.quaternion.x, y: botJet.quaternion.y, z: botJet.quaternion.z, w: botJet.quaternion.w }
+                };
+                
+                playerScores.set(botId, { username: name, score: 0 });
+                
+                const botObj = {
+                    id: botId,
+                    model: botJet,
+                    label: label,
+                    data: botData,
+                    targetPosition: new THREE.Vector3((Math.random() - 0.5) * 1600, 50 + Math.random() * 200, (Math.random() - 0.5) * 3000),
+                    speed: 1.2 + Math.random() * 0.8,
+                    lastFired: 0
+                };
+                
+                otherPlayers.set(botId, botObj);
+                bots.push(botObj);
+                scene.add(botJet);
+            });
+            updateLeaderboard();
+        }
+
+        function updateOfflineBots() {
+            const gameMode = localStorage.getItem('gameMode') || 'multi';
+            if (gameMode !== 'single') return;
+
+            bots.forEach(bot => {
+                if (bot.data.health <= 0) return; // skip dead bots
+
+                const botJet = bot.model;
+                const toTarget = new THREE.Vector3();
+                
+                // Decide whether to patrol or chase player
+                const distToPlayer = botJet.position.distanceTo(jet.position);
+                const isPlayerDead = parseInt(document.getElementById('health').textContent) <= 0;
+                
+                if (distToPlayer < 600 && !isPlayerDead) {
+                    // Chase mode
+                    toTarget.copy(jet.position).sub(botJet.position);
+                    
+                    // Bot firing logic
+                    const now = performance.now();
+                    if (distToPlayer < 400 && (now - bot.lastFired > 1400)) {
+                        bot.lastFired = now;
+                        fireBotMissile(bot);
+                    }
+                } else {
+                    // Patrol mode
+                    const distToPatrol = botJet.position.distanceTo(bot.targetPosition);
+                    if (distToPatrol < 100) {
+                        // pick new destination
+                        bot.targetPosition.set(
+                            (Math.random() - 0.5) * 1600,
+                            50 + Math.random() * 220,
+                            (Math.random() - 0.5) * 3000
+                        );
+                    }
+                    toTarget.copy(bot.targetPosition).sub(botJet.position);
+                }
+                
+                // Steering: slerp quaternion towards target vector
+                if (toTarget.lengthSq() > 0.01) {
+                    toTarget.normalize();
+                    const targetQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), toTarget);
+                    botJet.quaternion.slerp(targetQuat, 0.025); // smooth bot steering rotation
+                }
+                
+                // Move bot forward
+                const forward = new THREE.Vector3(0, 0, bot.speed);
+                forward.applyQuaternion(botJet.quaternion);
+                botJet.position.add(forward);
+                
+                // Enforce altitude bounds
+                if (botJet.position.y < 12) botJet.position.y = 12;
+                if (botJet.position.y > 450) botJet.position.y = 450;
+                
+                // Keep inside map bounds
+                const limitX = jetState.mapWidth / 2 - 30;
+                const limitZ = jetState.mapLength / 2 - 30;
+                if (Math.abs(botJet.position.x) > limitX) {
+                    botJet.position.x = Math.sign(botJet.position.x) * limitX;
+                    bot.targetPosition.x *= -0.5; // steer away
+                }
+                if (Math.abs(botJet.position.z) > limitZ) {
+                    botJet.position.z = Math.sign(botJet.position.z) * limitZ;
+                    bot.targetPosition.z *= -0.5; // steer away
+                }
+                
+                // Update internal position data for label alignment
+                bot.data.position.x = botJet.position.x;
+                bot.data.position.y = botJet.position.y;
+                bot.data.position.z = botJet.position.z;
+            });
+        }
+
+        function fireBotMissile(bot) {
+            const geom = new THREE.SphereGeometry(2.5, 16, 16);
+            const mat = new THREE.MeshBasicMaterial({ color: 0xffaa00, toneMapped: false });
+            const bullet = new THREE.Mesh(geom, mat);
+            
+            // Spawn at bot nose
+            const noseOffset = new THREE.Vector3(0, 0, 3.8).applyQuaternion(bot.model.quaternion);
+            bullet.position.copy(bot.model.position).add(noseOffset);
+            bullet.quaternion.copy(bot.model.quaternion);
+            
+            bullet.ownerId = bot.id;
+            bullet.isSpecial = false;
+            bullet.speed = jetState.weapons.missile.speed;
+            bullet.damage = jetState.weapons.missile.damage;
+            
+            scene.add(bullet);
+            missiles.push(bullet);
+        }
+
+        function handleOfflineDamage(botId, damage, isSpecial) {
+            const bot = otherPlayers.get(botId);
+            if (bot) {
+                bot.data.health = Math.max(0, bot.data.health - damage);
+                flashJetRed(bot.model);
+                
+                // Reward points to player
+                if (bot.data.health <= 0) {
+                    createExplosion(bot.model.position, 0xff3300);
+                    
+                    // Increment player score
+                    const points = isSpecial ? 50 : 25;
+                    const player = playerScores.get(playerId);
+                    if (player) {
+                        player.score += points;
+                        document.getElementById('score').textContent = player.score;
+                    }
+                    
+                    // Hide bot model and label temporarily (simulating death)
+                    bot.model.visible = false;
+                    bot.label.style.display = 'none';
+                    
+                    // Respawn bot after 3 seconds
+                    setTimeout(() => {
+                        bot.data.health = 100;
+                        bot.model.visible = true;
+                        bot.label.style.display = 'block';
+                        bot.model.position.set(
+                            (Math.random() - 0.5) * 1200,
+                            80 + Math.random() * 180,
+                            (Math.random() - 0.5) * 2400
+                        );
+                    }, 3000);
+                }
+                
+                updateLeaderboard();
+            }
+        }
+
         // Spawn other players procedurally
         function addOtherPlayer(playerData) {
             if (otherPlayers.has(playerData.id)) {
@@ -1621,7 +1867,9 @@
             otherPlayers.set(playerData.id, {
                 model: otherJet,
                 label: label,
-                data: playerData
+                data: playerData,
+                targetPosition: new THREE.Vector3().copy(otherJet.position),
+                targetQuaternion: new THREE.Quaternion().copy(otherJet.quaternion)
             });
             scene.add(otherJet);
         }
@@ -1630,12 +1878,12 @@
         function updateOtherPlayer(id, playerData) {
             const other = otherPlayers.get(id);
             if (other) {
-                const targetPos = new THREE.Vector3(playerData.position.x, playerData.position.y, playerData.position.z);
-                other.model.position.lerp(targetPos, 0.25); // smooth position interpolation
-                
+                // Update targets instead of direct modification so they lerp smoothly at 60fps
+                if (playerData.position) {
+                    other.targetPosition.set(playerData.position.x, playerData.position.y, playerData.position.z);
+                }
                 if (playerData.quaternion) {
-                    const targetQuat = new THREE.Quaternion(playerData.quaternion.x, playerData.quaternion.y, playerData.quaternion.z, playerData.quaternion.w);
-                    other.model.quaternion.slerp(targetQuat, 0.25); // smooth rotation interpolation
+                    other.targetQuaternion.set(playerData.quaternion.x, playerData.quaternion.y, playerData.quaternion.z, playerData.quaternion.w);
                 }
                 
                 // Update internal details
@@ -1901,8 +2149,10 @@
                 const throttlePercent = Math.round((jetState.currentSpeed / jetState.maxSpeed) * 100);
                 document.getElementById('hud-throttle').textContent = Math.min(100, throttlePercent);
 
-                // Sync details to other players via WS
-                if (ws && ws.readyState === WebSocket.OPEN) {
+                // Sync details to other players via WS (Throttled to 20Hz / 50ms to prevent network lag on Render)
+                const now = performance.now();
+                if (ws && ws.readyState === WebSocket.OPEN && (now - lastNetworkUpdate > 50)) {
+                    lastNetworkUpdate = now;
                     ws.send(JSON.stringify({
                         type: 'update',
                         position: { x: jet.position.x, y: jet.position.y, z: jet.position.z },
@@ -1916,8 +2166,22 @@
                 }
             }
 
-            // Sync other player HUD labels positions
+            // Update offline AI bot states (positions/steering/firing)
+            updateOfflineBots();
+
+            // Sync other player HUD labels positions and smoothly interpolate coordinates (60FPS)
             otherPlayers.forEach(other => {
+                // Skip bot animation update if bot is dead (to keep it hidden)
+                if (other.data && other.data.health <= 0) return;
+
+                // Smoothly slide positions and rotations
+                if (other.targetPosition) {
+                    other.model.position.lerp(other.targetPosition, 0.15);
+                }
+                if (other.targetQuaternion) {
+                    other.model.quaternion.slerp(other.targetQuaternion, 0.15);
+                }
+
                 const vector = new THREE.Vector3();
                 other.model.getWorldPosition(vector);
                 vector.project(camera);

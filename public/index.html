@@ -236,6 +236,53 @@
                 padding: 1.5rem;
             }
         }
+
+        /* Glassmorphism Game Mode Switcher */
+        .mode-select-container {
+            display: flex;
+            gap: 10px;
+            margin: 1.2rem 0;
+            justify-content: center;
+        }
+        .mode-btn {
+            background: rgba(0, 20, 15, 0.6);
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            color: rgba(0, 255, 204, 0.7);
+            padding: 0.7rem 1.2rem;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            margin-top: 0;
+            width: 48%;
+            box-shadow: none;
+            text-transform: uppercase;
+            font-family: inherit;
+            letter-spacing: 1px;
+        }
+        .mode-btn:hover {
+            background: rgba(0, 255, 204, 0.1);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.2);
+        }
+        .mode-btn.active {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: #050d0a;
+            border-color: #10b981;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+        .players-badge {
+            display: inline-block;
+            margin-top: 0.2rem;
+            margin-bottom: 1.0rem;
+            font-size: 0.9rem;
+            color: #ffaa00;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(255, 170, 0, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -259,7 +306,15 @@
         <h1>Sky-Warriors 2</h1>
         <div class="subtitle">MULTIPLAYER 3D JET COMBAT</div>
         <input type="text" id="username" placeholder="ENTER CALLSIGN" value="PILOT_ONE" maxlength="12">
-        <button id="startGame">Launch Jet</button>
+        
+        <div class="mode-select-container">
+            <button class="mode-btn active" id="mode-multi">Multiplayer</button>
+            <button class="mode-btn" id="mode-single">Single Player</button>
+        </div>
+        
+        <div class="players-badge" id="players-online">Loading Server Data...</div>
+        
+        <button id="startGame" style="margin-top: 0.2rem; width: 100%;">Launch Jet</button>
         <p>Sky-Warriors 2 is a fast-paced online jet fighter game. Battle real players or AI jets in browser-based dogfights. No downloads—just fly!</p>
         <p><a href="about.html">About Sky-Warriors</a> | <a href="how-to-play.html">How to Play</a> | <a href="features.html">Features</a></p>
     </div>
@@ -306,10 +361,50 @@
     </div>
 
     <script>
-        // Set randomized pilot tag by default to maintain dynamic callsigns
+        // Default callsign generation
         const callsigns = ['VAV','RAPTOR','MAVERICK','GHOST','VIPER','PHANTOM','COBRA','PUPPET','SLING','RAVEN'];
         const randomCallsign = callsigns[Math.floor(Math.random() * callsigns.length)] + '_' + Math.floor(100 + Math.random() * 900);
         document.getElementById('username').value = randomCallsign;
+
+        // Default mode is multiplayer
+        let selectedMode = 'multi';
+        localStorage.setItem('gameMode', selectedMode);
+
+        const modeMulti = document.getElementById('mode-multi');
+        const modeSingle = document.getElementById('mode-single');
+
+        modeMulti.addEventListener('click', () => {
+            selectedMode = 'multi';
+            modeMulti.classList.add('active');
+            modeSingle.classList.remove('active');
+            localStorage.setItem('gameMode', selectedMode);
+        });
+
+        modeSingle.addEventListener('click', () => {
+            selectedMode = 'single';
+            modeSingle.classList.add('active');
+            modeMulti.classList.remove('active');
+            localStorage.setItem('gameMode', selectedMode);
+        });
+
+        // Dynamic Server Player Count Query
+        function updatePlayersOnline() {
+            if (window.location.protocol === 'file:') {
+                document.getElementById('players-online').textContent = 'OFFLINE TRAINING ACTIVE';
+                return;
+            }
+            fetch('/api/players-count')
+                .then(res => res.json())
+                .then(data => {
+                    const count = data.count || 0;
+                    document.getElementById('players-online').textContent = count + ' PILOT(S) IN MULTIPLAYER';
+                })
+                .catch(() => {
+                    document.getElementById('players-online').textContent = 'MULTIPLAYER OFFLINE';
+                });
+        }
+        updatePlayersOnline();
+        setInterval(updatePlayersOnline, 4000); // refresh every 4 seconds
 
         document.getElementById('startGame').addEventListener('click', function () {
             let username = document.getElementById('username').value.trim();

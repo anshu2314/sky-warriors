@@ -81,6 +81,7 @@ wss.on('connection', (ws) => {
                         type: 'missileFired',
                         ownerId: playerId,
                         isSpecial: data.isSpecial,
+                        targetId: data.targetId,
                         position: data.position,
                         quaternion: data.quaternion
                     }, ws);
@@ -159,6 +160,11 @@ function broadcast(data, exclude = null) {
 // Fallback to index.html for Single Page Application routing (optional but neat)
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Endpoint to check active player count in multiplayer
+app.get('/api/players-count', (req, res) => {
+    res.json({ count: players.size });
 });
 
 const PORT = process.env.PORT || 3000;
