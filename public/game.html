@@ -1654,11 +1654,11 @@
                 
                 mesh = group;
             } else {
-                // Stretched glowing Vulcan tracer line
-                const geom = new THREE.CylinderGeometry(0.08, 0.08, 7.5, 5);
+                // High-visibility neon red-orange Vulcan tracer line (Thicker and longer to be clearly visible at 60FPS)
+                const geom = new THREE.CylinderGeometry(0.24, 0.24, 18.0, 5);
                 geom.rotateX(Math.PI / 2); // align along Z-axis travel direction
                 const mat = new THREE.MeshBasicMaterial({ 
-                    color: 0xffcc00, 
+                    color: 0xff1e00, // High-contrast neon red-orange
                     toneMapped: false 
                 });
                 mesh = new THREE.Mesh(geom, mat);
