@@ -405,12 +405,20 @@
             display: none; /* hidden on desktop, shown via touch detection */
             pointer-events: none;
         }
+        #mobile-left-group {
+            position: absolute;
+            bottom: 10px;
+            left: 20px;
+            width: 280px;
+            height: 160px;
+            pointer-events: none;
+        }
         #joystick-container {
             position: absolute;
-            bottom: 20px;
-            left: 30px;
-            width: 120px;
-            height: 120px;
+            bottom: 0px;
+            left: 0px;
+            width: 110px;
+            height: 110px;
             pointer-events: auto;
         }
         #joystick-base {
@@ -423,8 +431,8 @@
             box-shadow: 0 0 15px rgba(0, 255, 204, 0.15);
         }
         #joystick-handle {
-            width: 44px;
-            height: 44px;
+            width: 42px;
+            height: 42px;
             background: linear-gradient(135deg, #00ffcc 0%, #10b981 100%);
             border-radius: 50%;
             position: absolute;
@@ -433,6 +441,90 @@
             transform: translate(-50%, -50%);
             box-shadow: 0 0 12px #00ffcc;
             transition: transform 0.05s ease;
+        }
+        #btn-fire-left {
+            position: absolute;
+            bottom: 95px;
+            left: 110px;
+            width: 66px;
+            height: 66px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 80, 0, 0.5);
+            background: rgba(0, 10, 5, 0.75);
+            color: #ff5000;
+            text-shadow: 0 0 4px #ff5000;
+            font-weight: bold;
+            font-family: inherit;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            -webkit-user-select: none;
+            box-shadow: 0 0 10px rgba(255, 80, 0, 0.15);
+            pointer-events: auto;
+            transition: all 0.2s ease;
+        }
+        #btn-fire-left:active, #btn-fire-left.active {
+            background: linear-gradient(135deg, #ff7700 0%, #ff3300 100%);
+            color: #fff;
+            box-shadow: 0 0 20px #ff3300;
+            text-shadow: none;
+            transform: scale(0.9);
+        }
+        #throttle-container {
+            position: absolute;
+            bottom: 0px;
+            left: 195px;
+            width: 44px;
+            height: 140px;
+            pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+        }
+        #throttle-track {
+            width: 14px;
+            height: 110px;
+            background: rgba(0, 255, 204, 0.05);
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            border-radius: 7px;
+            position: relative;
+            box-shadow: 0 0 8px rgba(0, 255, 204, 0.1);
+        }
+        #throttle-fill {
+            width: 100%;
+            height: 50%;
+            background: linear-gradient(to top, #10b981, #00ffcc);
+            border-radius: 6px;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            box-shadow: 0 0 8px #00ffcc;
+        }
+        #throttle-handle {
+            width: 26px;
+            height: 26px;
+            background: #fff;
+            border: 2px solid #00ffcc;
+            border-radius: 50%;
+            position: absolute;
+            left: 50%;
+            bottom: 50%;
+            transform: translate(-50%, 50%);
+            box-shadow: 0 0 10px #00ffcc;
+            cursor: pointer;
+        }
+        #throttle-label {
+            font-size: 9px;
+            color: #00ffcc;
+            margin-top: 5px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-shadow: 0 0 4px #00ffcc;
         }
         #mobile-buttons {
             position: absolute;
@@ -545,11 +637,26 @@
 
     <!-- Mobile Touch Controller Overlay -->
     <div id="mobile-controls">
-        <div id="joystick-container">
-            <div id="joystick-base">
-                <div id="joystick-handle"></div>
+        <!-- Left Side Controls Group (Joystick, Left Fire button, and Throttle Slider) -->
+        <div id="mobile-left-group">
+            <div id="joystick-container">
+                <div id="joystick-base">
+                    <div id="joystick-handle"></div>
+                </div>
+            </div>
+            
+            <button id="btn-fire-left" class="mobile-action-btn">FIRE</button>
+            
+            <div id="throttle-container">
+                <div id="throttle-track">
+                    <div id="throttle-fill"></div>
+                    <div id="throttle-handle"></div>
+                </div>
+                <div id="throttle-label">THR</div>
             </div>
         </div>
+
+        <!-- Right Side Controls Group (Action buttons) -->
         <div id="mobile-buttons">
             <button id="btn-view" class="mobile-action-btn">VIEW</button>
             <button id="btn-special" class="mobile-action-btn">BLAST</button>
@@ -592,6 +699,7 @@
         const clouds = [];
         const gtaExplosions = []; // Dynamic track for premium GTA-style explosion meshes
         let gameStartTime = null;
+        let fireSideLeft = false; // Alternating wing barrels
         let currentLockedTarget = null; // Currently targeted enemy jet for homing missile assist
         let lastNetworkUpdate = 0; // Throttle timer for WS update sends
 
@@ -969,15 +1077,15 @@
             weapons: {
                 missile: {
                     cooldown: false,
-                    cooldownTime: 65, // Faster spray interval (approx 15 shots per sec)
-                    speed: 5.5,
-                    damage: 20
+                    cooldownTime: 40, // Hyper-fast rapid vulcan cannon (approx 25 shots per sec)
+                    speed: 18.0,      // Fast snap-to-target tracer speed (near hitscan for dogfights)
+                    damage: 14        // Balanced damage for high fire rate
                 },
                 special: {
                     cooldown: false,
-                    cooldownTime: 15000, // 15 seconds
-                    speed: 4.0,
-                    damage: 55
+                    cooldownTime: 12000, // 12 seconds cooldown
+                    speed: 4.5,
+                    damage: 60
                 }
             }
         };
@@ -1309,11 +1417,12 @@
 
         // Mobile Action Buttons Handlers
         const btnFire = document.getElementById('btn-fire');
+        const btnFireLeft = document.getElementById('btn-fire-left');
         const btnBoost = document.getElementById('btn-boost');
         const btnSpecial = document.getElementById('btn-special');
         const btnView = document.getElementById('btn-view');
 
-        // HOLD TO FIRE / SPRAY
+        // HOLD TO FIRE / SPRAY (Right Fire Button)
         btnFire.addEventListener('touchstart', (e) => {
             isFiringNormal = true;
             btnFire.classList.add('active');
@@ -1325,6 +1434,21 @@
             btnFire.classList.remove('active');
             e.preventDefault();
         }, { passive: false });
+
+        // HOLD TO FIRE / SPRAY (Left Fire Button)
+        if (btnFireLeft) {
+            btnFireLeft.addEventListener('touchstart', (e) => {
+                isFiringNormal = true;
+                btnFireLeft.classList.add('active');
+                e.preventDefault();
+            }, { passive: false });
+
+            btnFireLeft.addEventListener('touchend', (e) => {
+                isFiringNormal = false;
+                btnFireLeft.classList.remove('active');
+                e.preventDefault();
+            }, { passive: false });
+        }
 
         // TOGGLE BOOST / AFTERBURNER
         btnBoost.addEventListener('touchstart', (e) => {
@@ -1351,6 +1475,49 @@
             e.preventDefault();
         }, { passive: false });
 
+        // Mobile Throttle Slider Logic
+        const tContainer = document.getElementById('throttle-container');
+        const tTrack = document.getElementById('throttle-track');
+        const tFill = document.getElementById('throttle-fill');
+        const tHandle = document.getElementById('throttle-handle');
+        let tActive = false;
+
+        function updateMobileThrottle(clientY) {
+            if (!tTrack) return;
+            const rect = tTrack.getBoundingClientRect();
+            let pct = (rect.bottom - clientY) / rect.height;
+            pct = Math.max(0, Math.min(1, pct));
+
+            if (tFill) tFill.style.height = `${pct * 100}%`;
+            if (tHandle) tHandle.style.bottom = `${pct * 100}%`;
+
+            // Adjust jet target speed directly
+            const targetSpeed = jetState.minSpeed + pct * (jetState.maxSpeed - jetState.minSpeed);
+            jetState.currentSpeed = targetSpeed;
+        }
+
+        if (tContainer) {
+            tContainer.addEventListener('touchstart', (e) => {
+                tActive = true;
+                const touch = e.touches[0];
+                updateMobileThrottle(touch.clientY);
+                e.preventDefault();
+            }, { passive: false });
+
+            window.addEventListener('touchmove', (e) => {
+                if (!tActive) return;
+                const touch = e.touches[0];
+                updateMobileThrottle(touch.clientY);
+                e.preventDefault();
+            }, { passive: false });
+
+            window.addEventListener('touchend', () => {
+                if (tActive) {
+                    tActive = false;
+                }
+            });
+        }
+
         function fireMissile(isSpecial = false) {
             if (!jet || !playerId) return;
 
@@ -1360,10 +1527,17 @@
             // Spawn projectile locally
             const missileMesh = createPlasmaBallMesh(isSpecial);
             
-            // Set position at jet nose
-            const noseOffset = new THREE.Vector3(0, 0, 3.8);
-            noseOffset.applyQuaternion(jet.quaternion);
-            missileMesh.position.copy(jet.position).add(noseOffset);
+            // Set position: alternate left/right wings for normal Vulcan, center nose for heavy missile
+            let startPos;
+            if (!isSpecial) {
+                fireSideLeft = !fireSideLeft;
+                const barrelOffset = new THREE.Vector3(fireSideLeft ? -2.2 : 2.2, -0.4, 2.5);
+                startPos = new THREE.Vector3().copy(barrelOffset).applyQuaternion(jet.quaternion).add(jet.position);
+            } else {
+                const noseOffset = new THREE.Vector3(0, -0.5, 3.8);
+                startPos = new THREE.Vector3().copy(noseOffset).applyQuaternion(jet.quaternion).add(jet.position);
+            }
+            missileMesh.position.copy(startPos);
             
             // Initial heading: direct towards locked target (radar lock aim assistance) or default forward nose direction
             if (currentLockedTarget) {
@@ -1392,11 +1566,15 @@
             scene.add(missileMesh);
             missiles.push(missileMesh);
 
-            // Trigger firing camera shake (subtle cockpit rattle)
+            // Spawn Muzzle Flash Spark Particles
+            const forwardDir = new THREE.Vector3(0, 0, 1).applyQuaternion(missileMesh.quaternion);
+            createMuzzleFlash(startPos, forwardDir);
+
+            // Trigger firing camera shake (subtle machine gun rattle / heavy blast recoil)
             if (isSpecial) {
-                jetState.cameraShake = Math.min(jetState.cameraShake + 0.15, 0.32);
+                jetState.cameraShake = Math.min(jetState.cameraShake + 0.16, 0.35);
             } else {
-                jetState.cameraShake = Math.min(jetState.cameraShake + 0.04, 0.12);
+                jetState.cameraShake = Math.min(jetState.cameraShake + 0.025, 0.08); // rapid-fire rattle
             }
 
             // Add cooldown
@@ -1411,33 +1589,76 @@
                 }
             }, weapon.cooldownTime);
 
+            // Find locked target ID for sync
+            let targetPlayerId = null;
+            if (currentLockedTarget) {
+                for (let [id, other] of otherPlayers.entries()) {
+                    if (other === currentLockedTarget) {
+                        targetPlayerId = id;
+                        break;
+                    }
+                }
+            }
+
             // Sync fire to Server
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({
                     type: 'missileFired',
                     isSpecial: isSpecial,
-                    targetId: targetPlayerId, // Sync homing target ID
+                    targetId: targetPlayerId,
                     position: { x: missileMesh.position.x, y: missileMesh.position.y, z: missileMesh.position.z },
                     quaternion: { x: missileMesh.quaternion.x, y: missileMesh.quaternion.y, z: missileMesh.quaternion.z, w: missileMesh.quaternion.w }
                 }));
             }
         }
 
+        // Helper to spawn bright muzzle flash sparks
+        function createMuzzleFlash(pos, dir) {
+            for (let i = 0; i < 4; i++) {
+                const geom = new THREE.SphereGeometry(0.12, 4, 4);
+                const mat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+                const spark = new THREE.Mesh(geom, mat);
+                spark.position.copy(pos);
+                const velocity = new THREE.Vector3().copy(dir).multiplyScalar(0.4).add(new THREE.Vector3(
+                    (Math.random() - 0.5) * 1.5,
+                    (Math.random() - 0.5) * 1.5,
+                    (Math.random() - 0.5) * 1.5
+                ));
+                scene.add(spark);
+                particles.push({
+                    mesh: spark,
+                    velocity: velocity,
+                    life: 3 + Math.floor(Math.random() * 3)
+                });
+            }
+        }
+
         function createPlasmaBallMesh(isSpecial = false) {
             let mesh;
             if (isSpecial) {
-                // Giant purple energy sphere (Enlarged to 4.0 radius)
-                const geom = new THREE.SphereGeometry(4.0, 16, 16);
-                const mat = new THREE.MeshBasicMaterial({ 
-                    color: 0xff00ff, 
-                    toneMapped: false 
-                });
-                mesh = new THREE.Mesh(geom, mat);
+                // White-hot guided missile fuselage with red fins
+                const group = new THREE.Group();
+                
+                const bodyGeom = new THREE.CylinderGeometry(0.25, 0.25, 3.2, 8);
+                bodyGeom.rotateX(Math.PI / 2);
+                const bodyMat = new THREE.MeshBasicMaterial({ color: 0xeeeeee });
+                const body = new THREE.Mesh(bodyGeom, bodyMat);
+                group.add(body);
+                
+                const tipGeom = new THREE.ConeGeometry(0.25, 0.7, 8);
+                tipGeom.rotateX(Math.PI / 2);
+                tipGeom.translate(0, 0, 1.95);
+                const tipMat = new THREE.MeshBasicMaterial({ color: 0xff3333 });
+                const tip = new THREE.Mesh(tipGeom, tipMat);
+                group.add(tip);
+                
+                mesh = group;
             } else {
-                // Giant gold plasma sphere (Enlarged to 2.5 radius to match original purple)
-                const geom = new THREE.SphereGeometry(2.5, 16, 16);
+                // Stretched glowing Vulcan tracer line
+                const geom = new THREE.CylinderGeometry(0.08, 0.08, 7.5, 5);
+                geom.rotateX(Math.PI / 2); // align along Z-axis travel direction
                 const mat = new THREE.MeshBasicMaterial({ 
-                    color: 0xffaa00, 
+                    color: 0xffcc00, 
                     toneMapped: false 
                 });
                 mesh = new THREE.Mesh(geom, mat);
@@ -1587,6 +1808,29 @@
                 const forward = new THREE.Vector3(0, 0, missile.speed);
                 forward.applyQuaternion(missile.quaternion);
                 missile.position.add(forward);
+                
+                // Spawn thick smoke trail for special guided missiles
+                if (missile.isSpecial) {
+                    const geom = new THREE.SphereGeometry(0.35 + Math.random() * 0.35, 5, 5);
+                    const mat = new THREE.MeshBasicMaterial({ 
+                        color: 0xcccccc, 
+                        transparent: true, 
+                        opacity: 0.5 
+                    });
+                    const smoke = new THREE.Mesh(geom, mat);
+                    smoke.position.copy(missile.position);
+                    scene.add(smoke);
+                    
+                    particles.push({
+                        mesh: smoke,
+                        velocity: new THREE.Vector3(
+                            (Math.random() - 0.5) * 0.15,
+                            (Math.random() - 0.5) * 0.15,
+                            (Math.random() - 0.5) * 0.15
+                        ),
+                        life: 18 + Math.floor(Math.random() * 8)
+                    });
+                }
                 
                 // Out of bounds check
                 if (Math.abs(missile.position.x) > jetState.mapWidth / 2 ||
@@ -2129,14 +2373,22 @@
         }
 
         function fireBotMissile(bot) {
-            const geom = new THREE.SphereGeometry(2.5, 16, 16);
-            const mat = new THREE.MeshBasicMaterial({ color: 0xffaa00, toneMapped: false });
-            const bullet = new THREE.Mesh(geom, mat);
+            const bullet = createPlasmaBallMesh(false);
             
-            // Spawn at bot nose
-            const noseOffset = new THREE.Vector3(0, 0, 3.8).applyQuaternion(bot.model.quaternion);
-            bullet.position.copy(bot.model.position).add(noseOffset);
+            // Alternate wing barrels for bots
+            bot.fireSideLeft = !bot.fireSideLeft;
+            const barrelOffset = new THREE.Vector3(bot.fireSideLeft ? -2.2 : 2.2, -0.4, 2.5);
+            const startPos = new THREE.Vector3().copy(barrelOffset).applyQuaternion(bot.model.quaternion).add(bot.model.position);
+            
+            bullet.position.copy(startPos);
             bullet.quaternion.copy(bot.model.quaternion);
+            
+            // Firing spread for bots (simulates slight spray inaccuracy)
+            const spreadX = (Math.random() - 0.5) * 0.035;
+            const spreadY = (Math.random() - 0.5) * 0.035;
+            const spreadZ = (Math.random() - 0.5) * 0.035;
+            const spreadQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(spreadX, spreadY, spreadZ));
+            bullet.quaternion.multiply(spreadQuat);
             
             bullet.ownerId = bot.id;
             bullet.isSpecial = false;
@@ -2145,6 +2397,10 @@
             
             scene.add(bullet);
             missiles.push(bullet);
+
+            // Muzzle flash spark particles for bot cannons
+            const forwardDir = new THREE.Vector3(0, 0, 1).applyQuaternion(bullet.quaternion);
+            createMuzzleFlash(startPos, forwardDir);
         }
 
         function handleOfflineDamage(botId, damage, isSpecial) {
@@ -2348,9 +2604,17 @@
 
             // Local player physics & navigation
             if (jet && playerId && !document.getElementById('deathScreen').classList.contains('active')) {
-                // Continuous yellow spray if mouse is held down
+                // Continuous yellow spray if mouse/touch is held down
                 if (isFiringNormal) {
                     fireMissile(false);
+                }
+
+                // Sync mobile throttle slider UI to actual speed when not actively dragging
+                if (isTouchDevice && !tActive && tFill && tHandle) {
+                    const currentPct = (jetState.currentSpeed - jetState.minSpeed) / (jetState.maxSpeed - jetState.minSpeed);
+                    const clampedPct = Math.max(0, Math.min(1, currentPct));
+                    tFill.style.height = `${clampedPct * 100}%`;
+                    tHandle.style.bottom = `${clampedPct * 100}%`;
                 }
 
                 // Key W/S - Accelerate / Brake (Throttle controls)
