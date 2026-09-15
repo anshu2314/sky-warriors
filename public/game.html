@@ -24,11 +24,26 @@
     </script>
     <meta name="google-site-verification" content="ykUDjkWJSMjqVOOOM3kptuqwJR3qtLJxdkbDW_fxZ4o" />
     <meta charset="UTF-8">
-    <title>Sky-Warriors 2 – Multiplayer Jet Fighter Game Online</title>
-    <meta name="description" content="Play Sky-Warriors 2, a fast-paced multiplayer jet fighter game. Battle real players online in intense 3D aerial dogfights. No download needed.">
-    <meta name="keywords" content="multiplayer jet fighter game, online jet game, 3D dogfight, sky warriors 2, play fighter jet game, browser air combat game, jet PvP, free jet simulator, fly jets online, aerial shooting game, jet battle online">
-    <meta name="robots" content="index, follow">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sky-Warriors 2 ⚡ Play Free 3D Jet Fighter Game Online (No Download)</title>
+    <meta name="description" content="🔥 Play Sky-Warriors 2 FREE! Experience 3D online jet dogfights with auto-homing missiles, purple plasma attacks, space.io combat &amp; real-time leaderboards. Instant browser play!">
+    <meta name="keywords" content="sky warriors 2, free 3d jet game, online multiplayer jet shooter, dogfight game online, browser air combat simulator, homing missile jet simulator, space io jet shooter, free browser flight simulator">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="theme-color" content="#050510">
+    <link rel="canonical" href="https://sky-warriors-2.onrender.com/game.html" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://sky-warriors-2.onrender.com/game.html">
+    <meta property="og:title" content="Sky-Warriors 2 ⚡ Free 3D Jet Fighter Game Online">
+    <meta property="og:description" content="Lock target, launch homing plasma missiles, and battle online players in Sky-Warriors 2. Play free in browser with zero downloads!">
+    <meta property="og:image" content="https://sky-warriors-2.onrender.com/thumbnail.jpg">
+    
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Sky-Warriors 2 ⚡ 3D Jet Shooter Game">
+    <meta name="twitter:description" content="Experience space.io style homing plasma attacks and dogfights in Sky-Warriors 2!">
+    <meta name="twitter:image" content="https://sky-warriors-2.onrender.com/thumbnail.jpg">
     
     <style>
         body { 
@@ -68,46 +83,133 @@
         }
         
         /* Futuristic Crosshair */
+        /* ===== CROSSHAIR (fixed dead center always) ===== */
+        /* ===== AAA SCI-FI FLIGHT CROSSHAIR & TACTICAL AIM RING ===== */
         #crosshair {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 30px;
-            height: 30px;
+            width: 32px;
+            height: 32px;
             pointer-events: none;
-            z-index: 1000;
+            z-index: 1001;
         }
-        #crosshair::before, #crosshair::after {
+        /* Horizontal laser reticle arms */
+        #crosshair::before {
             content: '';
             position: absolute;
+            top: 15px; left: 0;
+            width: 10px; height: 2px;
             background: #00ffcc;
-            box-shadow: 0 0 8px #00ffcc;
+            box-shadow: 0 0 6px #00ffcc;
+            border-radius: 1px;
         }
-        /* Horizontal line */
-        #crosshair::before {
-            top: 14px;
-            left: 0;
-            width: 30px;
-            height: 2px;
-        }
-        /* Vertical line */
         #crosshair::after {
-            left: 14px;
-            top: 0;
-            width: 2px;
-            height: 30px;
+            content: '';
+            position: absolute;
+            top: 15px; right: 0;
+            width: 10px; height: 2px;
+            background: #00ffcc;
+            box-shadow: 0 0 6px #00ffcc;
+            border-radius: 1px;
         }
-        /* Inner dot */
+        /* Vertical laser reticle arms */
+        #crosshair-dot::before {
+            content: '';
+            position: absolute;
+            left: 15px; top: 0;
+            width: 2px; height: 10px;
+            background: #00ffcc;
+            box-shadow: 0 0 6px #00ffcc;
+            border-radius: 1px;
+        }
+        #crosshair-dot::after {
+            content: '';
+            position: absolute;
+            left: 15px; bottom: 0;
+            width: 2px; height: 10px;
+            background: #00ffcc;
+            box-shadow: 0 0 6px #00ffcc;
+            border-radius: 1px;
+        }
         #crosshair-dot {
             position: absolute;
-            top: 13px;
-            left: 13px;
-            width: 4px;
-            height: 4px;
-            background: #00ffcc;
+            inset: 0;
+            pointer-events: none;
+        }
+        /* Center glowing reticle dot */
+        #crosshair-center {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 4px; height: 4px;
+            background: #ffffff;
             border-radius: 50%;
-            box-shadow: 0 0 5px #00ffcc;
+            box-shadow: 0 0 8px #00ffcc, 0 0 14px #00ffcc;
+        }
+
+        /* ===== TACTICAL PURPLE GLOWING AIM RING (Reduced compact size) ===== */
+        #aim-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 64px;
+            height: 64px;
+            border: 2px dashed rgba(191, 0, 255, 0.7);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 999;
+            box-shadow: 0 0 20px rgba(191, 0, 255, 0.65), inset 0 0 12px rgba(191, 0, 255, 0.3);
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+        }
+        /* Tactical corner tick brackets on HUD ring */
+        #aim-ring::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border: 2px solid transparent;
+            border-top-color: rgba(215, 0, 255, 0.85);
+            border-bottom-color: rgba(215, 0, 255, 0.85);
+            border-radius: 50%;
+            transform: rotate(45deg);
+        }
+        #aim-ring::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border: 2px solid transparent;
+            border-left-color: rgba(215, 0, 255, 0.85);
+            border-right-color: rgba(215, 0, 255, 0.85);
+            border-radius: 50%;
+            transform: rotate(45deg);
+        }
+        /* Enemy inside locking ring -> turns glowing neon magenta-pink */
+        #aim-ring.enemy-in-range {
+            border: 2px dashed rgba(255, 0, 212, 0.95);
+            box-shadow: 0 0 28px rgba(255, 0, 212, 0.9), inset 0 0 16px rgba(255, 0, 212, 0.45);
+            animation: ringPulse 0.45s infinite alternate;
+        }
+        #aim-ring.enemy-in-range::before,
+        #aim-ring.enemy-in-range::after {
+            border-top-color: rgba(255, 0, 212, 1);
+            border-bottom-color: rgba(255, 0, 212, 1);
+            border-left-color: rgba(255, 0, 212, 1);
+            border-right-color: rgba(255, 0, 212, 1);
+        }
+        #aim-ring.full-lock {
+            border: 2px solid rgba(255, 0, 128, 1) !important;
+            box-shadow: 0 0 35px rgba(255, 0, 128, 1), inset 0 0 22px rgba(255, 0, 128, 0.6) !important;
+            animation: fullLockPulse 0.22s infinite alternate !important;
+        }
+        @keyframes fullLockPulse {
+            from { transform: translate(-50%, -50%) scale(1.0); }
+            to   { transform: translate(-50%, -50%) scale(1.12); }
+        }
+        @keyframes ringPulse {
+            from { border-color: rgba(255, 60, 0, 0.7); }
+            to   { border-color: rgba(255, 180, 0, 1); }
         }
 
         .boost-indicator {
@@ -317,40 +419,69 @@
             pointer-events: none;
         }
 
-        /* Target Lock Reticle HUD Overlay */
+        /* Target Lock Bracket - appears ON the enemy jet in 3D space */
         #target-lock {
             position: absolute;
-            width: 44px;
-            height: 44px;
-            border: 2px dashed #ff3355;
-            border-radius: 4px;
-            transform: translate(-50%, -50%);
+            top: 0;
+            left: 0;
+            width: 40px;
+            height: 40px;
             pointer-events: none;
             display: none;
             z-index: 1001;
-            box-shadow: 0 0 8px rgba(255, 51, 85, 0.4);
+            transform: translate(-50%, -50%);
+        }
+        /* Corner brackets (4 corners) using box-shadow trick */
+        #target-lock::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 2px solid transparent;
+            border-top-color: #ff4400;
+            border-left-color: #ff4400;
+            box-shadow: inset 0 0 0 0px #ff4400;
+            filter: drop-shadow(0 0 4px #ff4400);
+        }
+        #target-lock::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 2px solid transparent;
+            border-bottom-color: #ff4400;
+            border-right-color: #ff4400;
+            filter: drop-shadow(0 0 4px #ff4400);
         }
         #target-lock.locked {
             display: block;
-            animation: lockPulse 0.4s infinite alternate;
+            animation: lockSpin 0.25s ease-out forwards, lockPulse 0.5s 0.25s infinite alternate;
+        }
+        @keyframes lockSpin {
+            0% { transform: translate(-50%, -50%) scale(1.6) rotate(45deg); opacity: 0.4; }
+            100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
         }
         @keyframes lockPulse {
-            0% { border-color: #ff3355; transform: translate(-50%, -50%) scale(1.0); }
-            100% { border-color: #ffaa00; transform: translate(-50%, -50%) scale(1.25); }
+            0% { transform: translate(-50%, -50%) scale(1.0); }
+            100% { transform: translate(-50%, -50%) scale(1.12); }
         }
-        /* Lock Indicator Tag */
-        #target-lock::after {
-            content: 'LOCK';
+        /* LOCK text tag above the bracket */
+        #lock-label {
             position: absolute;
-            top: -18px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #ff3355;
-            font-size: 10px;
+            top: 0;
+            left: 0;
+            font-size: 9px;
             font-family: 'Courier New', monospace;
             font-weight: bold;
-            letter-spacing: 1px;
-            text-shadow: 0 0 4px #ff3355;
+            color: #ff4400;
+            letter-spacing: 2px;
+            text-shadow: 0 0 6px #ff4400;
+            transform: translate(-50%, calc(-100% - 8px));
+            display: none;
+            pointer-events: none;
+            z-index: 1002;
+            white-space: nowrap;
+        }
+        #lock-label.visible {
+            display: block;
         }
 
         /* FPS Crosshair Hitmarker */
@@ -407,16 +538,17 @@
         }
         #mobile-left-group {
             position: absolute;
-            bottom: 10px;
+            bottom: 20px;
             left: 20px;
-            width: 280px;
-            height: 160px;
+            display: flex;
+            align-items: flex-end;
+            gap: 15px;
             pointer-events: none;
+            width: auto;
+            height: auto;
         }
         #joystick-container {
-            position: absolute;
-            bottom: 0px;
-            left: 0px;
+            position: relative;
             width: 110px;
             height: 110px;
             pointer-events: auto;
@@ -443,11 +575,10 @@
             transition: transform 0.05s ease;
         }
         #btn-fire-left {
-            position: absolute;
-            bottom: 95px;
-            left: 110px;
+            position: relative;
             width: 66px;
             height: 66px;
+            margin-bottom: 22px; /* Lift it slightly above joystick bottom */
             border-radius: 50%;
             border: 2px solid rgba(255, 80, 0, 0.5);
             background: rgba(0, 10, 5, 0.75);
@@ -475,9 +606,7 @@
             transform: scale(0.9);
         }
         #throttle-container {
-            position: absolute;
-            bottom: 0px;
-            left: 195px;
+            position: relative;
             width: 44px;
             height: 140px;
             pointer-events: auto;
@@ -528,13 +657,13 @@
         }
         #mobile-buttons {
             position: absolute;
-            bottom: 10px;
-            right: 30px;
+            bottom: 20px;
+            right: 20px;
             display: grid;
             grid-template-areas: 
-                "view special"
+                ". view"
                 "boost fire";
-            gap: 12px;
+            gap: 15px;
             pointer-events: auto;
         }
         .mobile-action-btn {
@@ -567,12 +696,6 @@
             color: #00b4ff;
             text-shadow: 0 0 4px #00b4ff;
         }
-        #btn-special {
-            grid-area: special;
-            border-color: rgba(255, 0, 255, 0.5);
-            color: #ff00ff;
-            text-shadow: 0 0 4px #ff00ff;
-        }
         #btn-boost {
             grid-area: boost;
             border-color: rgba(16, 185, 129, 0.5);
@@ -600,12 +723,115 @@
             box-shadow: 0 0 20px #ff3300;
             text-shadow: none;
         }
+
+        /* Tutorial Screen Overlay */
+        #tutorial-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 10, 20, 0.95);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #00ffcc;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            backdrop-filter: blur(5px);
+        }
+        #tutorial-overlay h1 {
+            color: #ff5000;
+            text-shadow: 0 0 10px #ff5000;
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        .tutorial-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 20px 0;
+            max-width: 800px;
+            background: rgba(0, 255, 204, 0.05);
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.1);
+        }
+        .tutorial-col h2 {
+            border-bottom: 1px dashed #00ffcc;
+            padding-bottom: 10px;
+            margin-top: 0;
+            font-size: 18px;
+        }
+        .tutorial-col p {
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 12px 0;
+            text-align: left;
+        }
+        .highlight {
+            color: #ffcc00;
+            font-weight: bold;
+        }
+        #btn-start-sortie {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 20px;
+            font-family: inherit;
+            font-weight: bold;
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+            border: 2px solid #10b981;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+            transition: all 0.2s ease;
+        }
+        #btn-start-sortie:hover {
+            background: #10b981;
+            color: #000;
+            box-shadow: 0 0 25px #10b981;
+        }
+        
+        /* Responsive adjustments for tutorial */
+        @media (max-width: 768px) {
+            .tutorial-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                padding: 15px;
+                max-width: 90%;
+            }
+            #tutorial-overlay h1 {
+                font-size: 28px;
+            }
+        }
     </style>
 
     <!-- Three.js Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
+    <!-- Tutorial Screen Overlay -->
+    <div id="tutorial-overlay">
+        <h1>SKY WARRIORS 2</h1>
+        <p>Advanced Dogfighting Simulator</p>
+        <div class="tutorial-grid">
+            <div class="tutorial-col">
+                <h2>COMBAT SYSTEMS</h2>
+                <p>🔹 <span class="highlight">Auto-Aim Ring:</span> Keep enemies inside your circular HUD to lock on.</p>
+                <p>🔹 <span class="highlight">Manual Fire:</span> Press FIRE to shoot. Bullets will curve toward your locked target.</p>
+                <p>🔹 <span class="highlight">Special Attack:</span> Keep an enemy locked continuously for 3 SECONDS to auto-fire a devastating blast!</p>
+            </div>
+            <div class="tutorial-col">
+                <h2>FLIGHT CONTROLS</h2>
+                <p>💻 <b>Desktop:</b> Mouse/Arrows to steer, Left Click to Fire, Right Click/Shift for Boost.</p>
+                <p>📱 <b>Mobile:</b> Use on-screen joystick, FIRE button, and BOOST to outmaneuver attacks.</p>
+                <p>⚠️ Boost burns fuel fast. Use it to dodge!</p>
+            </div>
+        </div>
+        <button id="btn-start-sortie" onclick="document.getElementById('tutorial-overlay').style.display='none'">START SORTIE</button>
+    </div>
+
     <!-- Game UI Overlay -->
     <div id="hud">
         <div class="hud-row"><strong>CALLSIGN:</strong> <span id="player-name">Player</span></div>
@@ -630,10 +856,15 @@
     
     <div id="warning-msg">WARNING: LEAVING AIRSPACE!</div>
     
-    <div id="crosshair"><div id="crosshair-dot"></div></div>
+    <div id="aim-ring"></div>
+    <div id="crosshair">
+        <div id="crosshair-dot"></div>
+        <div id="crosshair-center"></div>
+    </div>
+    <div id="target-lock"></div>
+    <div id="lock-label">LOCKED</div>
     <div class="boost-indicator" id="boostIndicator">AFTERBURNER</div>
     <div id="hit-marker"></div>
-    <div id="target-lock"></div>
 
     <!-- Mobile Touch Controller Overlay -->
     <div id="mobile-controls">
@@ -659,16 +890,17 @@
         <!-- Right Side Controls Group (Action buttons) -->
         <div id="mobile-buttons">
             <button id="btn-view" class="mobile-action-btn">VIEW</button>
-            <button id="btn-special" class="mobile-action-btn">BLAST</button>
             <button id="btn-boost" class="mobile-action-btn">BOOST</button>
             <button id="btn-fire" class="mobile-action-btn">FIRE</button>
         </div>
     </div>
     
-    <button class="leaderboard-button" onclick="toggleLeaderboard()">🏆</button>
+    <button class="leaderboard-button" onclick="toggleLeaderboard()" title="Leaderboard" style="right:20px">🏆</button>
+    <a class="leaderboard-button" href="/activity.html" target="_blank" title="Activity Log &amp; Full Stats" style="right:72px;text-decoration:none;display:flex;align-items:center;justify-content:center">📋</a>
     <div class="leaderboard-panel" id="leaderboardPanel">
         <div class="leaderboard-title">LEADERBOARD</div>
         <ul class="leaderboard-list" id="leaderboardList"></ul>
+        <a href="/activity.html" target="_blank" style="display:block;margin-top:14px;text-align:center;font-size:11px;color:#00ffcc;opacity:0.6;text-decoration:none;font-family:Courier New,monospace;">📋 Full Activity Log →</a>
     </div>
 
     <!-- Death Screen Overlay -->
@@ -701,6 +933,9 @@
         let gameStartTime = null;
         let fireSideLeft = false; // Alternating wing barrels
         let currentLockedTarget = null; // Currently targeted enemy jet for homing missile assist
+        let targetLockTime = 0; // Tracks duration of continuous lock-on
+        let targetLockDuration = 0; // Lock timer for auto special attack
+        let specialAttackFiredForLock = false; // Prevents spamming special attack during same lock session
         let lastNetworkUpdate = 0; // Throttle timer for WS update sends
 
         // Scene setup
@@ -1021,6 +1256,7 @@
 
         // Initialize players (airborne launch!)
         let jet = createProceduralJet(false);
+        jet.scale.set(1.35, 1.35, 1.35); // Enlarged jet model for superior visibility and cool look!
         jet.position.set(0, 30, 0);
         jet.rotation.y = Math.PI; // point forward
         scene.add(jet);
@@ -1282,8 +1518,17 @@
         // Keyboard & Mouse inputs
         let mouseX = 0;
         let mouseY = 0;
+        let isMouseShaking = false;
+        let mouseShakeTimer = 0;
 
         document.addEventListener('mousemove', (e) => {
+            // Measure mouse movement speed (shake detector to break lock)
+            const speed = Math.sqrt((e.movementX || 0) ** 2 + (e.movementY || 0) ** 2);
+            if (speed > 16) {
+                isMouseShaking = true;
+                mouseShakeTimer = 22; // ~0.35s break-lock window
+            }
+
             // Normalize cursor: center screen is (0,0)
             mouseX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
             mouseY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
@@ -1295,7 +1540,7 @@
 
         let isFiringNormal = false;
 
-        // Robust Mouse pointerdown click triggers (Left = ordinary spray, Right = strong)
+        // Robust Mouse pointerdown click triggers
         document.addEventListener('pointerdown', (e) => {
             // Do not fire when clicking UI components
             if (e.target.tagName === 'BUTTON' || e.target.closest('#hud') || e.target.closest('.leaderboard-panel')) {
@@ -1304,13 +1549,18 @@
             if (e.button === 0) {
                 isFiringNormal = true;
             } else if (e.button === 2) {
-                fireMissile(true);  // Right click - strong purple energy orb
+                // Right click - Escape Boost
+                jetState.isBoosting = true;
+                document.getElementById('boostIndicator').classList.add('active');
             }
         });
 
         document.addEventListener('pointerup', (e) => {
             if (e.button === 0) {
                 isFiringNormal = false;
+            } else if (e.button === 2) {
+                jetState.isBoosting = false;
+                document.getElementById('boostIndicator').classList.remove('active');
             }
         });
 
@@ -1328,11 +1578,10 @@
         document.addEventListener('keydown', (e) => {
             keys[e.code] = true;
             if (e.code === 'Space') isFiringNormal = true;
-            if (e.code === 'ControlLeft' || e.code === 'ControlRight') fireMissile(true);
             if (e.code === 'KeyC') {
                 jetState.cameraView = jetState.cameraView === 'chase' ? 'cockpit' : 'chase';
             }
-            if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+            if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'ControlLeft' || e.code === 'ControlRight') {
                 jetState.isBoosting = true;
                 document.getElementById('boostIndicator').classList.add('active');
             }
@@ -1341,7 +1590,7 @@
         document.addEventListener('keyup', (e) => {
             keys[e.code] = false;
             if (e.code === 'Space') isFiringNormal = false;
-            if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+            if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'ControlLeft' || e.code === 'ControlRight') {
                 jetState.isBoosting = false;
                 document.getElementById('boostIndicator').classList.remove('active');
             }
@@ -1419,7 +1668,6 @@
         const btnFire = document.getElementById('btn-fire');
         const btnFireLeft = document.getElementById('btn-fire-left');
         const btnBoost = document.getElementById('btn-boost');
-        const btnSpecial = document.getElementById('btn-special');
         const btnView = document.getElementById('btn-view');
 
         // HOLD TO FIRE / SPRAY (Right Fire Button)
@@ -1460,12 +1708,6 @@
                 btnBoost.classList.remove('active');
                 document.getElementById('boostIndicator').classList.remove('active');
             }
-            e.preventDefault();
-        }, { passive: false });
-
-        // TAP TO BLAST (SPECIAL)
-        btnSpecial.addEventListener('touchstart', (e) => {
-            fireMissile(true);
             e.preventDefault();
         }, { passive: false });
 
@@ -1539,18 +1781,28 @@
             }
             missileMesh.position.copy(startPos);
             
-            // Initial heading: direct towards locked target (radar lock aim assistance) or default forward nose direction
-            if (currentLockedTarget) {
-                const targetPos = currentLockedTarget.model.position;
+            // Find target object and initial direction
+            let targetPlayerId = null;
+            let targetModelObj = null;
+            if (currentLockedTarget && currentLockedTarget.model) {
+                targetModelObj = currentLockedTarget.model;
+                const targetPos = targetModelObj.position;
                 const dir = new THREE.Vector3().copy(targetPos).sub(missileMesh.position).normalize();
                 const lockQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir);
                 missileMesh.quaternion.copy(lockQuat);
+
+                for (let [id, other] of otherPlayers.entries()) {
+                    if (other === currentLockedTarget) {
+                        targetPlayerId = id;
+                        break;
+                    }
+                }
             } else {
                 missileMesh.quaternion.copy(jet.quaternion);
             }
 
-            // Firing spread: add a subtle firing spread to ordinary attacks
-            if (!isSpecial) {
+            // Firing spread for unguided shots
+            if (!isSpecial && !currentLockedTarget) {
                 const spreadX = (Math.random() - 0.5) * 0.024;
                 const spreadY = (Math.random() - 0.5) * 0.024;
                 const spreadZ = (Math.random() - 0.5) * 0.024;
@@ -1562,43 +1814,45 @@
             missileMesh.isSpecial = isSpecial;
             missileMesh.speed = weapon.speed;
             missileMesh.damage = weapon.damage;
+            missileMesh.targetId = targetPlayerId;
+            missileMesh.targetModel = targetModelObj;
 
             scene.add(missileMesh);
             missiles.push(missileMesh);
 
-            // Spawn Muzzle Flash Spark Particles
+            // Muzzle Flash & Sci-Fi Shooting Visuals (space.io style)
             const forwardDir = new THREE.Vector3(0, 0, 1).applyQuaternion(missileMesh.quaternion);
-            createMuzzleFlash(startPos, forwardDir);
+            createMuzzleFlash(startPos, forwardDir, isSpecial);
 
-            // Trigger firing camera shake (subtle machine gun rattle / heavy blast recoil)
+            // Special Attack Blast Visual FX
             if (isSpecial) {
-                jetState.cameraShake = Math.min(jetState.cameraShake + 0.16, 0.35);
+                jetState.cameraShake = Math.min(jetState.cameraShake + 0.38, 0.65);
+                
+                // Sci-Fi Plasma Shockwave Ring at launch point
+                const shockRingGeom = new THREE.RingGeometry(0.5, 4.8, 24);
+                const shockRingMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, side: THREE.DoubleSide, transparent: true, opacity: 0.95 });
+                const shockRing = new THREE.Mesh(shockRingGeom, shockRingMat);
+                shockRing.position.copy(startPos);
+                shockRing.quaternion.copy(jet.quaternion);
+                scene.add(shockRing);
+                particles.push({ mesh: shockRing, velocity: new THREE.Vector3(0,0,0), life: 12 });
             } else {
-                jetState.cameraShake = Math.min(jetState.cameraShake + 0.025, 0.08); // rapid-fire rattle
+                jetState.cameraShake = Math.min(jetState.cameraShake + 0.025, 0.08);
             }
 
-            // Add cooldown
+            // Cooldown handling
             weapon.cooldown = true;
             if (isSpecial) updateSpecialCooldownHUD(weapon.cooldownTime);
             setTimeout(() => {
                 weapon.cooldown = false;
                 if (isSpecial) {
                     const el = document.getElementById('hud-special');
-                    el.textContent = 'READY';
-                    el.style.color = '#00ffcc';
-                }
-            }, weapon.cooldownTime);
-
-            // Find locked target ID for sync
-            let targetPlayerId = null;
-            if (currentLockedTarget) {
-                for (let [id, other] of otherPlayers.entries()) {
-                    if (other === currentLockedTarget) {
-                        targetPlayerId = id;
-                        break;
+                    if (el) {
+                        el.textContent = 'READY';
+                        el.style.color = '#00ffcc';
                     }
                 }
-            }
+            }, weapon.cooldownTime);
 
             // Sync fire to Server
             if (ws && ws.readyState === WebSocket.OPEN) {
@@ -1612,23 +1866,26 @@
             }
         }
 
-        // Helper to spawn bright muzzle flash sparks
-        function createMuzzleFlash(pos, dir) {
-            for (let i = 0; i < 4; i++) {
-                const geom = new THREE.SphereGeometry(0.12, 4, 4);
-                const mat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+        // Helper to spawn bright muzzle flash sparks (space.io style energy flares)
+        function createMuzzleFlash(pos, dir, isSpecial = false) {
+            const count = isSpecial ? 16 : 5;
+            const colorHex = isSpecial ? 0x00ffff : 0xffaa00;
+            for (let i = 0; i < count; i++) {
+                const geom = new THREE.SphereGeometry(isSpecial ? 0.28 : 0.14, 4, 4);
+                const mat = new THREE.MeshBasicMaterial({ color: colorHex, toneMapped: false });
                 const spark = new THREE.Mesh(geom, mat);
                 spark.position.copy(pos);
-                const velocity = new THREE.Vector3().copy(dir).multiplyScalar(0.4).add(new THREE.Vector3(
-                    (Math.random() - 0.5) * 1.5,
-                    (Math.random() - 0.5) * 1.5,
-                    (Math.random() - 0.5) * 1.5
+                const speed = isSpecial ? 1.2 : 0.45;
+                const velocity = new THREE.Vector3().copy(dir).multiplyScalar(speed).add(new THREE.Vector3(
+                    (Math.random() - 0.5) * (isSpecial ? 2.5 : 1.2),
+                    (Math.random() - 0.5) * (isSpecial ? 2.5 : 1.2),
+                    (Math.random() - 0.5) * (isSpecial ? 2.5 : 1.2)
                 ));
                 scene.add(spark);
                 particles.push({
                     mesh: spark,
                     velocity: velocity,
-                    life: 3 + Math.floor(Math.random() * 3)
+                    life: 5 + Math.floor(Math.random() * (isSpecial ? 8 : 4))
                 });
             }
         }
@@ -1636,29 +1893,36 @@
         function createPlasmaBallMesh(isSpecial = false) {
             let mesh;
             if (isSpecial) {
-                // White-hot guided missile fuselage with red fins
+                // Hyper-cool violet-cyan plasma Singularity Missile with dual glowing ring halos
                 const group = new THREE.Group();
                 
-                const bodyGeom = new THREE.CylinderGeometry(0.25, 0.25, 3.2, 8);
+                const bodyGeom = new THREE.CylinderGeometry(0.38, 0.38, 4.2, 10);
                 bodyGeom.rotateX(Math.PI / 2);
-                const bodyMat = new THREE.MeshBasicMaterial({ color: 0xeeeeee });
+                const bodyMat = new THREE.MeshBasicMaterial({ color: 0xff00ff, toneMapped: false });
                 const body = new THREE.Mesh(bodyGeom, bodyMat);
                 group.add(body);
                 
-                const tipGeom = new THREE.ConeGeometry(0.25, 0.7, 8);
+                const tipGeom = new THREE.ConeGeometry(0.42, 1.1, 10);
                 tipGeom.rotateX(Math.PI / 2);
-                tipGeom.translate(0, 0, 1.95);
-                const tipMat = new THREE.MeshBasicMaterial({ color: 0xff3333 });
+                tipGeom.translate(0, 0, 2.6);
+                const tipMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, toneMapped: false });
                 const tip = new THREE.Mesh(tipGeom, tipMat);
                 group.add(tip);
+
+                // Glowing energy aura ring around warhead
+                const ringGeom = new THREE.TorusGeometry(0.65, 0.08, 8, 16);
+                const ringMat = new THREE.MeshBasicMaterial({ color: 0xd000ff, toneMapped: false });
+                const ring = new THREE.Mesh(ringGeom, ringMat);
+                ring.position.z = 1.0;
+                group.add(ring);
                 
                 mesh = group;
             } else {
-                // High-visibility neon red-orange Vulcan tracer line (Thicker and longer to be clearly visible at 60FPS)
-                const geom = new THREE.CylinderGeometry(0.24, 0.24, 18.0, 5);
-                geom.rotateX(Math.PI / 2); // align along Z-axis travel direction
+                // Ultra-bright glowing neon purple-cyan Vulcan Tracer Bolt (Thicker and longer for Space.io look)
+                const geom = new THREE.CylinderGeometry(0.3, 0.3, 20.0, 6);
+                geom.rotateX(Math.PI / 2);
                 const mat = new THREE.MeshBasicMaterial({ 
-                    color: 0xff1e00, // High-contrast neon red-orange
+                    color: 0xbf00ff, // Glowing Neon Violet-Purple
                     toneMapped: false 
                 });
                 mesh = new THREE.Mesh(geom, mat);
@@ -1804,31 +2068,53 @@
             for (let i = missiles.length - 1; i >= 0; i--) {
                 const missile = missiles[i];
 
+                // --- HOMING BULLET STEERING LOGIC (space.io style tracking) ---
+                if (missile.targetModel || missile.targetId) {
+                    let targetObj = missile.targetModel;
+                    if (!targetObj && missile.targetId) {
+                        const other = otherPlayers.get(missile.targetId);
+                        if (other && other.model && other.data && other.data.health > 0) {
+                            targetObj = other.model;
+                        }
+                    }
+
+                    if (targetObj && targetObj.position) {
+                        const toTarget = new THREE.Vector3().copy(targetObj.position).sub(missile.position);
+                        const dist = toTarget.length();
+
+                        if (dist > 4 && dist < 1400) {
+                            toTarget.normalize();
+                            const currentDir = new THREE.Vector3(0, 0, 1).applyQuaternion(missile.quaternion);
+                            const dot = currentDir.dot(toTarget);
+
+                            // Homing curve: steer toward target if in front arc (dot > 0.1)
+                            // If enemy jet makes sharp maneuvers or boosts away, dot drops -> bullet misses!
+                            if (dot > 0.1) {
+                                const targetQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), toTarget);
+                                const turnRate = missile.isSpecial ? 0.14 : 0.085;
+                                missile.quaternion.slerp(targetQuat, turnRate);
+                            }
+                        }
+                    }
+                }
+
                 // Move missile forward along its heading
                 const forward = new THREE.Vector3(0, 0, missile.speed);
                 forward.applyQuaternion(missile.quaternion);
                 missile.position.add(forward);
                 
-                // Spawn thick smoke trail for special guided missiles
-                if (missile.isSpecial) {
-                    const geom = new THREE.SphereGeometry(0.35 + Math.random() * 0.35, 5, 5);
-                    const mat = new THREE.MeshBasicMaterial({ 
-                        color: 0xcccccc, 
-                        transparent: true, 
-                        opacity: 0.5 
-                    });
-                    const smoke = new THREE.Mesh(geom, mat);
-                    smoke.position.copy(missile.position);
-                    scene.add(smoke);
-                    
+                // Space.io style energy particle trail
+                if (Math.random() < 0.65) {
+                    const trailColor = missile.isSpecial ? 0x00ffff : 0xffaa00;
+                    const trailGeom = new THREE.SphereGeometry(missile.isSpecial ? 0.45 : 0.18, 4, 4);
+                    const trailMat = new THREE.MeshBasicMaterial({ color: trailColor, transparent: true, opacity: 0.8, toneMapped: false });
+                    const trail = new THREE.Mesh(trailGeom, trailMat);
+                    trail.position.copy(missile.position);
+                    scene.add(trail);
                     particles.push({
-                        mesh: smoke,
-                        velocity: new THREE.Vector3(
-                            (Math.random() - 0.5) * 0.15,
-                            (Math.random() - 0.5) * 0.15,
-                            (Math.random() - 0.5) * 0.15
-                        ),
-                        life: 18 + Math.floor(Math.random() * 8)
+                        mesh: trail,
+                        velocity: new THREE.Vector3((Math.random()-0.5)*0.1, (Math.random()-0.5)*0.1, (Math.random()-0.5)*0.1),
+                        life: 12 + Math.floor(Math.random() * 6)
                     });
                 }
                 
@@ -1951,8 +2237,10 @@
                     username: getUsername(),
                     score: 0
                 });
-                // Spawn bots as offline training sandbox
-                setTimeout(spawnOfflineBots, 500);
+                if (gameMode !== 'multi') {
+                    // Spawn bots as offline training sandbox
+                    setTimeout(spawnOfflineBots, 500);
+                }
                 return;
             }
 
@@ -1971,6 +2259,9 @@
                         username: getUsername(),
                         score: 0
                     });
+                }
+                if (gameMode !== 'multi') {
+                    setTimeout(spawnOfflineBots, 500);
                 }
                 return;
             }
@@ -2192,18 +2483,39 @@
             updateLeaderboard();
         }
 
-        function updateLeaderboard() {
+        async function updateLeaderboard() {
             const list = document.getElementById('leaderboardList');
-            const sorted = Array.from(playerScores.entries()).sort((a,b) => b[1].score - a[1].score);
+            const gameMode = localStorage.getItem('gameMode') || 'multi';
             
-            list.innerHTML = '';
-            sorted.forEach(([id, item]) => {
-                const li = document.createElement('li');
-                li.className = 'leaderboard-item';
-                if (id === playerId) li.classList.add('current-player');
-                li.innerHTML = `<span>${item.username}</span><span>${item.score}</span>`;
-                list.appendChild(li);
-            });
+            if (gameMode === 'single' || window.location.protocol === 'file:') {
+                // Offline Local Leaderboard
+                const sorted = Array.from(playerScores.entries()).sort((a,b) => b[1].score - a[1].score);
+                list.innerHTML = '';
+                sorted.forEach(([id, item]) => {
+                    const li = document.createElement('li');
+                    li.className = 'leaderboard-item';
+                    if (id === playerId) li.classList.add('current-player');
+                    li.innerHTML = `<span>${item.username}</span><span>${item.score}</span>`;
+                    list.appendChild(li);
+                });
+            } else {
+                // Online Global Leaderboard via SQLite DB
+                try {
+                    const response = await fetch('/api/leaderboard');
+                    const sorted = await response.json();
+                    list.innerHTML = '';
+                    sorted.forEach((item) => {
+                        const li = document.createElement('li');
+                        li.className = 'leaderboard-item';
+                        // Highlight if it's the local user's username
+                        if (item.username === getUsername()) li.classList.add('current-player');
+                        li.innerHTML = `<span>${item.username}</span><span>${item.score}</span>`;
+                        list.appendChild(li);
+                    });
+                } catch (e) {
+                    console.error('Failed to fetch leaderboard:', e);
+                }
+            }
         }
 
         // --- OFFLINE SINGLE PLAYER BOT AI SYSTEM ---
@@ -2214,9 +2526,9 @@
             botNames.forEach((name, index) => {
                 const botId = 'offline_bot_' + index;
                 
-                // Spawn procedural model
+                // Spawn procedural model (Enlarged to 1.28x for crisp, high visibility)
                 const botJet = createProceduralJet(true); // isEnemy = true
-                botJet.scale.set(0.9, 0.9, 0.9);
+                botJet.scale.set(1.28, 1.28, 1.28);
                 
                 // Random position
                 const bx = (Math.random() - 0.5) * 1200;
@@ -2451,7 +2763,7 @@
 
             console.log('➕ Adding player:', playerData.username);
             const otherJet = createProceduralJet(true); // isEnemy = true
-            otherJet.scale.set(0.9, 0.9, 0.9);
+            otherJet.scale.set(1.28, 1.28, 1.28); // Enlarged enemy jet scale for crisp visibility!
             
             // Set initial position
             if (playerData.position) {
@@ -2604,8 +2916,10 @@
 
             // Local player physics & navigation
             if (jet && playerId && !document.getElementById('deathScreen').classList.contains('active')) {
-                // Continuous yellow spray if mouse/touch is held down
-                if (isFiringNormal) {
+                // Continuous spray — rate limited to max 8 shots/sec
+                const fireNow = performance.now();
+                if (isFiringNormal && (fireNow - (jet._lastFireTime || 0)) > 120) {
+                    jet._lastFireTime = fireNow;
                     fireMissile(false);
                 }
 
@@ -2668,34 +2982,37 @@
                 jetState.pitch += (pitchInput - jetState.pitch) * jetState.pitchSpeed;
                 jetState.roll += (rollInput - jetState.roll) * jetState.rollSpeed;
 
-                // Banking-turns: roll tilt directly influences yaw heading
+                // Banking-turns: roll tilt directly influences yaw heading (100% free manual steering!)
                 if (Math.abs(jetState.roll) > 0.05) {
                     jetState.yaw += jetState.roll * jetState.yawRate;
-                }
-
-                // Radar lock aim assistance: magnetically pulls nose towards locked enemy jet coordinates ONLY when actively firing/shooting!
-                if (currentLockedTarget && isFiringNormal) {
-                    const targetPos = currentLockedTarget.model.position;
-                    const toTarget = new THREE.Vector3().copy(targetPos).sub(jet.position);
-                    
-                    // Calculate target heading angles (horizontal heading yaw, vertical elevation pitch)
-                    const targetYaw = Math.atan2(toTarget.x, toTarget.z);
-                    const horizDist = Math.sqrt(toTarget.x * toTarget.x + toTarget.z * toTarget.z);
-                    const targetPitch = Math.atan2(toTarget.y, horizDist);
-                    
-                    // Interpolate yaw heading addressing wrap-around (wrap -PI to PI)
-                    let yawDiff = targetYaw - jetState.yaw;
-                    while (yawDiff < -Math.PI) yawDiff += Math.PI * 2;
-                    while (yawDiff > Math.PI) yawDiff -= Math.PI * 2;
-                    
-                    // Blend pull corrections (5.5% pull rate provides strong but smooth magnetic look)
-                    jetState.yaw += yawDiff * 0.055;
-                    jetState.pitch += (targetPitch - jetState.pitch) * 0.055;
                 }
 
                 // Apply pitch/yaw/roll rotations to Quaternion
                 const euler = new THREE.Euler(jetState.pitch, jetState.yaw, jetState.roll, 'YXZ');
                 jet.quaternion.setFromEuler(euler);
+
+                // --- SOFT MAGNET LOCK STEERING (engages ONLY while holding Left-Click Firing AND not shaking mouse) ---
+                if (mouseShakeTimer > 0) {
+                    mouseShakeTimer--;
+                    if (mouseShakeTimer <= 0) isMouseShaking = false;
+                }
+
+                if (isFiringNormal && currentLockedTarget && currentLockedTarget.model && !isMouseShaking) {
+                    const targetPos = currentLockedTarget.model.position;
+                    const toTarget = new THREE.Vector3().copy(targetPos).sub(jet.position);
+                    if (toTarget.lengthSq() > 10) {
+                        toTarget.normalize();
+                        const targetQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), toTarget);
+                        // Gently align jet direction toward target (soft magnetic tracking)
+                        jet.quaternion.slerp(targetQuat, 0.055);
+                        
+                        // Extract back into jetState so manual flight resumes smoothly
+                        const syncEuler = new THREE.Euler().setFromQuaternion(jet.quaternion, 'YXZ');
+                        jetState.pitch = syncEuler.x;
+                        jetState.yaw = syncEuler.y;
+                        jetState.roll = syncEuler.z;
+                    }
+                }
 
                 // Move jet forward in the exact direction it is pointing (direct vector flight)
                 const forward = new THREE.Vector3(0, 0, jetState.currentSpeed);
@@ -2749,43 +3066,94 @@
 
                 // --- TARGET ACQUISITION & LOCK-ON (Guided Missile Assist) ---
                 let closestTarget = null;
-                let maxDot = 0.82; // Cone angle ~35 degrees
-                let minDistance = 800; // Max locking distance
+                let minScreenDist = 60; // Radius of lock-on detection (compact, tight to crosshair)
 
                 otherPlayers.forEach((other, id) => {
-                    const toTarget = new THREE.Vector3().copy(other.model.position).sub(jet.position);
-                    const distance = toTarget.length();
-                    if (distance < minDistance) {
-                        toTarget.normalize();
-                        const jetForward = new THREE.Vector3(0, 0, 1).applyQuaternion(jet.quaternion);
-                        const dot = jetForward.dot(toTarget);
-                        if (dot > maxDot) {
-                            maxDot = dot;
+                    const vector = new THREE.Vector3();
+                    other.model.getWorldPosition(vector);
+                    vector.project(camera);
+                    
+                    if (vector.z < 1) { // Ensure target is in front of camera
+                        const screenX = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                        const screenY = (-vector.y * 0.5 + 0.5) * window.innerHeight;
+                        const centerX = window.innerWidth / 2;
+                        const centerY = window.innerHeight / 2;
+                        const dist = Math.sqrt(Math.pow(screenX - centerX, 2) + Math.pow(screenY - centerY, 2));
+                        
+                        const distance3D = jet.position.distanceTo(other.model.position);
+                        
+                        if (dist <= minScreenDist && distance3D < 1400) {
+                            minScreenDist = dist;
                             closestTarget = other;
                         }
                     }
                 });
 
-                currentLockedTarget = closestTarget;
-
-                // Sync Target Lock HUD Box
-                const lockBox = document.getElementById('target-lock');
-                if (currentLockedTarget) {
-                    const vector = new THREE.Vector3();
-                    currentLockedTarget.model.getWorldPosition(vector);
-                    vector.project(camera);
-                    
-                    if (vector.z > 1) {
-                        lockBox.classList.remove('locked');
+                // Continuous Lock Tracking for Auto/Charged Special Attack
+                if (closestTarget) {
+                    if (closestTarget === currentLockedTarget) {
+                        targetLockDuration += 1 / 60.0; // increment lock time seconds
+                        if (targetLockDuration >= 2.0 && !specialAttackFiredForLock) {
+                            if (!jetState.weapons.special.cooldown) {
+                                fireMissile(true); // Launch heavy special attack with space.io visuals!
+                                specialAttackFiredForLock = true;
+                            }
+                        }
                     } else {
-                        lockBox.classList.add('locked');
-                        const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
-                        const y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
-                        lockBox.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+                        currentLockedTarget = closestTarget;
+                        targetLockDuration = 0;
+                        specialAttackFiredForLock = false;
                     }
                 } else {
-                    lockBox.classList.remove('locked');
+                    currentLockedTarget = null;
+                    targetLockDuration = 0;
+                    specialAttackFiredForLock = false;
                 }
+
+                // ===== HUD: Lock Box & Aim Ring Effects =====
+                const aimRing = document.getElementById('aim-ring');
+                const lockBox = document.getElementById('target-lock');
+                const lockLabel = document.getElementById('lock-label');
+
+                if (currentLockedTarget && currentLockedTarget.model) {
+                    aimRing.classList.add('enemy-in-range');
+
+                    // Position the lock bracket over the enemy in 3D space
+                    const tVec = new THREE.Vector3();
+                    currentLockedTarget.model.getWorldPosition(tVec);
+                    tVec.project(camera);
+
+                    if (tVec.z < 1) {
+                        const tx = (tVec.x * 0.5 + 0.5) * window.innerWidth;
+                        const ty = (-tVec.y * 0.5 + 0.5) * window.innerHeight;
+                        lockBox.style.left = tx.toFixed(0) + 'px';
+                        lockBox.style.top  = ty.toFixed(0) + 'px';
+                        lockBox.classList.add('locked');
+                        lockLabel.style.left = tx.toFixed(0) + 'px';
+                        lockLabel.style.top  = ty.toFixed(0) + 'px';
+                        lockLabel.classList.add('visible');
+
+                        if (targetLockDuration >= 2.0) {
+                            lockLabel.textContent = 'LOCKED - SPECIAL ATTACK!';
+                            lockLabel.style.color = '#ffaa00';
+                            aimRing.classList.add('full-lock');
+                        } else {
+                            const pct = Math.floor((targetLockDuration / 2.0) * 100);
+                            lockLabel.textContent = `LOCKING ${pct}%`;
+                            lockLabel.style.color = '#ff4400';
+                            aimRing.classList.remove('full-lock');
+                        }
+                    } else {
+                        lockBox.classList.remove('locked');
+                        lockLabel.classList.remove('visible');
+                    }
+                } else {
+                    aimRing.classList.remove('enemy-in-range');
+                    aimRing.classList.remove('full-lock');
+                    lockBox.classList.remove('locked');
+                    lockLabel.classList.remove('visible');
+                }
+
 
                 // --- CAMERA VIEW MATRIX CONTROLS ---
                 const yawEuler = new THREE.Euler(0, jetState.yaw, 0);
@@ -2846,9 +3214,9 @@
                 document.getElementById('hud-throttle').textContent = Math.min(100, throttlePercent);
 
                 // Sync details to other players via WS (Throttled to 20Hz / 50ms to prevent network lag on Render)
-                const now = performance.now();
-                if (ws && ws.readyState === WebSocket.OPEN && (now - lastNetworkUpdate > 50)) {
-                    lastNetworkUpdate = now;
+                const specialNow = performance.now();
+                if (ws && ws.readyState === WebSocket.OPEN && (specialNow - lastNetworkUpdate > 50)) {
+                    lastNetworkUpdate = specialNow;
                     ws.send(JSON.stringify({
                         type: 'update',
                         position: { x: jet.position.x, y: jet.position.y, z: jet.position.z },

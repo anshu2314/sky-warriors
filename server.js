@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
 const path = require('path');
+const sqlite3 = require('sqlite3').verbose();
 
 const app = express();
 const server = http.createServer(app);
@@ -10,8 +11,25 @@ const wss = new WebSocket.Server({ server });
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Initialize SQLite Database
+const db = new sqlite3.Database(path.join(__dirname, 'leaderboard.db'), (err) => {
+    if (err) {
+        console.error('Database connection error:', err.message);
+    } else {
+        console.log('✅ Connected to SQLite database');
+        db.run(`CREATE TABLE IF NOT EXISTS leaderboard (
+            username TEXT PRIMARY KEY,
+            score INTEGER
+        )`);
+    }
+});
+
 // Store connected players
 const players = new Map();
+
+// Activity Log - persists across sessions in memory
+const activityLog = [];
+const MAX_LOG = 200; // Keep last 200 events
 
 wss.on('connection', (ws) => {
     // Generate a unique ID for the player
@@ -27,8 +45,13 @@ wss.on('connection', (ws) => {
         isAirborne: true,
         username: 'Player',
         health: 100,
-        score: 0
+        score: 0,
+        joinTime: Date.now()
     });
+
+    // Log the join
+    activityLog.unshift({ event: 'join', username: 'Player', playerId, time: new Date().toISOString() });
+    if (activityLog.length > MAX_LOG) activityLog.pop();
 
     // Send player their ID
     ws.send(JSON.stringify({
@@ -62,6 +85,12 @@ wss.on('connection', (ws) => {
                         player.rotation = data.rotation;
                         player.speed = data.speed;
                         player.isAirborne = data.isAirborne;
+                        // Update username in log if changed
+                        if (data.username && data.username !== player.username) {
+                            // Patch latest join log entry for this player
+                            const entry = activityLog.find(e => e.playerId === playerId && e.event === 'join');
+                            if (entry) entry.username = data.username;
+                        }
                         player.username = data.username;
                         if (data.score !== undefined) player.score = data.score;
                         if (data.health !== undefined) player.health = data.health;
@@ -100,6 +129,11 @@ wss.on('connection', (ws) => {
                         const points = data.isSpecial ? 50 : 25;
                         if (shooter && playerId !== targetId) {
                             shooter.score += points;
+
+                            // Save accumulated score to SQLite database
+                            db.run(`INSERT INTO leaderboard (username, score) VALUES (?, ?) 
+                                    ON CONFLICT(username) DO UPDATE SET score = score + ?`, 
+                                    [shooter.username, points, points]);
                         }
 
                         // Broadcast hit to ALL players (including sender to sync HUD/state)
@@ -138,6 +172,22 @@ wss.on('connection', (ws) => {
     });
 
     ws.on('close', () => {
+        // Log leave with duration
+        const p = players.get(playerId);
+        if (p) {
+            const durationSec = Math.round((Date.now() - (p.joinTime || Date.now())) / 1000);
+            const mins = Math.floor(durationSec / 60);
+            const secs = durationSec % 60;
+            activityLog.unshift({
+                event: 'leave',
+                username: p.username,
+                playerId,
+                time: new Date().toISOString(),
+                duration: `${mins}m ${secs}s`,
+                score: p.score
+            });
+            if (activityLog.length > MAX_LOG) activityLog.pop();
+        }
         // Remove player when disconnected
         players.delete(playerId);
         broadcast({
@@ -165,6 +215,32 @@ app.get('/', (req, res) => {
 // Endpoint to check active player count in multiplayer
 app.get('/api/players-count', (req, res) => {
     res.json({ count: players.size });
+});
+
+// Endpoint to fetch global leaderboard from SQLite
+app.get('/api/leaderboard', (req, res) => {
+    db.all(`SELECT username, score FROM leaderboard ORDER BY score DESC LIMIT 50`, [], (err, rows) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json(rows);
+    });
+});
+
+// Endpoint to fetch activity log (recent joins/leaves)
+app.get('/api/activity-log', (req, res) => {
+    res.json(activityLog);
+});
+
+// Endpoint to get currently online players
+app.get('/api/online', (req, res) => {
+    const online = Array.from(players.values()).map(p => ({
+        username: p.username,
+        score: p.score,
+        joinTime: new Date(p.joinTime).toISOString()
+    }));
+    res.json(online);
 });
 
 const PORT = process.env.PORT || 3000;
