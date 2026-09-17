@@ -24,26 +24,56 @@
     </script>
     <meta name="google-site-verification" content="ykUDjkWJSMjqVOOOM3kptuqwJR3qtLJxdkbDW_fxZ4o" />
     <meta charset="UTF-8">
-    <title>Sky-Warriors 2 ⚡ Play Free 3D Jet Fighter Game Online (No Download)</title>
-    <meta name="description" content="🔥 Play Sky-Warriors 2 FREE! Experience 3D online jet dogfights with auto-homing missiles, purple plasma attacks, space.io combat &amp; real-time leaderboards. Instant browser play!">
-    <meta name="keywords" content="sky warriors 2, free 3d jet game, online multiplayer jet shooter, dogfight game online, browser air combat simulator, homing missile jet simulator, space io jet shooter, free browser flight simulator">
+    <title>Sky-Warriors 2 ⚡ Play Free 3D Space.io Jet Shooter Online (No Download)</title>
+    <meta name="description" content="🔥 Play Sky-Warriors 2 FREE! Experience high-octane 3D space.io style jet dogfights with fast 1s radial lock-on, homing plasma missiles, instant snap aiming &amp; global leaderboards. Instant browser play!">
+    <meta name="keywords" content="space io jet shooter, sky warriors 2, space.io game online, free 3d jet game, online multiplayer jet shooter, 3d dogfight online, browser air combat simulator, homing missile jet simulator, free io games online, fast snap auto aim jet game">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <meta name="theme-color" content="#050510">
     <link rel="canonical" href="https://sky-warriors-2.onrender.com/game.html" />
     
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://sky-warriors-2.onrender.com/game.html">
-    <meta property="og:title" content="Sky-Warriors 2 ⚡ Free 3D Jet Fighter Game Online">
-    <meta property="og:description" content="Lock target, launch homing plasma missiles, and battle online players in Sky-Warriors 2. Play free in browser with zero downloads!">
+    <meta property="og:title" content="Sky-Warriors 2 ⚡ Free 3D Space.io Jet Shooter Game Online">
+    <meta property="og:description" content="Instant snap lock-on, 1s radial charge special attacks, and epic 3D space.io jet dogfights in Sky-Warriors 2. Play free in browser with zero downloads!">
     <meta property="og:image" content="https://sky-warriors-2.onrender.com/thumbnail.jpg">
     
     <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Sky-Warriors 2 ⚡ 3D Jet Shooter Game">
-    <meta name="twitter:description" content="Experience space.io style homing plasma attacks and dogfights in Sky-Warriors 2!">
+    <meta name="twitter:title" content="Sky-Warriors 2 ⚡ 3D Space.io Jet Shooter Game">
+    <meta name="twitter:description" content="Experience instant snap lock-on plasma attacks and 3D dogfights in Sky-Warriors 2!">
     <meta name="twitter:image" content="https://sky-warriors-2.onrender.com/thumbnail.jpg">
+    
+    <!-- JSON-LD Structured Data Schema for Search Engines -->
+    <script type="application/ld+json">
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": "Sky-Warriors 2",
+        "alternateName": ["Sky Warriors 2 Space IO", "SkyWarriors 3D Jet Shooter"],
+        "description": "High-octane 3D space.io style jet shooter game playable free in web browsers. Features instant snap target pursuit, 1.0s radial ring charge special attacks, and real-time multiplayer dogfights.",
+        "genre": ["Action", "Flight Simulator", "Shooter", "Multiplayer", "IO Game"],
+        "playMode": "MultiPlayer",
+        "applicationCategory": "Game",
+        "operatingSystem": "Web Browser, Windows, macOS, Android, iOS",
+        "url": "https://sky-warriors-2.onrender.com/game.html",
+        "image": "https://sky-warriors-2.onrender.com/thumbnail.jpg"
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sky-warriors-2.onrender.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Play Game", "item": "https://sky-warriors-2.onrender.com/game.html" }
+        ]
+      }
+    ]
+    </script>
     
     <style>
         body { 
@@ -961,9 +991,9 @@
 </head>
 <body>
     <!-- Space.io Style Clean Controls Screen Overlay -->
-    <div id="tutorial-overlay">
+    <div id="tutorial-overlay" onclick="document.getElementById('tutorial-overlay').style.display='none'" style="cursor:pointer;">
         <h1>SKY WARRIORS 2</h1>
-        <div class="subtitle">3D AIR COMBAT & DOGFIGHT SIMULATOR</div>
+        <div class="subtitle">3D AIR COMBAT & DOGFIGHT SIMULATOR (CLICK ANYWHERE TO PLAY)</div>
         
         <div class="controls-container">
             <!-- MOVE CONTROL BOX -->
@@ -1007,11 +1037,11 @@
                     <span class="or-divider">OR</span>
                     <div class="mouse-icon left-click"></div>
                 </div>
-                <div class="control-desc">Hold Fire on locked target: Auto-Pursuits jet & fills radial ring to launch Special Homing Orb!</div>
+                <div class="control-desc">Hold Fire on locked target: Snaps jet & fills 1s radial ring for Homing Special Orb!</div>
             </div>
         </div>
 
-        <button id="btn-start-sortie" onclick="document.getElementById('tutorial-overlay').style.display='none'">START SORTIE</button>
+        <button id="btn-start-sortie" onclick="event.stopPropagation(); document.getElementById('tutorial-overlay').style.display='none'">START SORTIE (CLICK ANYWHERE)</button>
     </div>
 
     <!-- Game UI Overlay -->
@@ -1525,8 +1555,8 @@
                 },
                 special: {
                     cooldown: false,
-                    cooldownTime: 12000, // 12 seconds cooldown
-                    speed: 4.5,
+                    cooldownTime: 3500, // Fast 3.5 seconds cooldown
+                    speed: 6.5,
                     damage: 60
                 }
             }
@@ -2099,28 +2129,44 @@
         function createPlasmaBallMesh(isSpecial = false) {
             let mesh;
             if (isSpecial) {
-                // Hyper-cool violet-cyan plasma Singularity Missile with dual glowing ring halos
+                // Massive Hyper-Cool Violet-Cyan Plasma Singularity Missile with Glowing Aura Sphere & Halos
                 const group = new THREE.Group();
                 
-                const bodyGeom = new THREE.CylinderGeometry(0.38, 0.38, 4.2, 10);
+                const bodyGeom = new THREE.CylinderGeometry(0.75, 0.75, 6.5, 12);
                 bodyGeom.rotateX(Math.PI / 2);
                 const bodyMat = new THREE.MeshBasicMaterial({ color: 0xff00ff, toneMapped: false });
                 const body = new THREE.Mesh(bodyGeom, bodyMat);
                 group.add(body);
                 
-                const tipGeom = new THREE.ConeGeometry(0.42, 1.1, 10);
+                const tipGeom = new THREE.ConeGeometry(0.85, 2.0, 12);
                 tipGeom.rotateX(Math.PI / 2);
-                tipGeom.translate(0, 0, 2.6);
+                tipGeom.translate(0, 0, 4.0);
                 const tipMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, toneMapped: false });
                 const tip = new THREE.Mesh(tipGeom, tipMat);
                 group.add(tip);
 
-                // Glowing energy aura ring around warhead
-                const ringGeom = new THREE.TorusGeometry(0.65, 0.08, 8, 16);
-                const ringMat = new THREE.MeshBasicMaterial({ color: 0xd000ff, toneMapped: false });
-                const ring = new THREE.Mesh(ringGeom, ringMat);
-                ring.position.z = 1.0;
-                group.add(ring);
+                // Outer Glowing Energy Aura Sphere
+                const auraGeom = new THREE.SphereGeometry(1.8, 16, 16);
+                const auraMat = new THREE.MeshBasicMaterial({
+                    color: 0xff00ff,
+                    transparent: true,
+                    opacity: 0.65,
+                    blending: THREE.AdditiveBlending,
+                    toneMapped: false
+                });
+                const aura = new THREE.Mesh(auraGeom, auraMat);
+                group.add(aura);
+
+                // Dual Glowing Energy Aura Rings
+                const ringGeom = new THREE.TorusGeometry(1.2, 0.15, 8, 16);
+                const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, toneMapped: false });
+                const ring1 = new THREE.Mesh(ringGeom, ringMat);
+                ring1.position.z = 1.5;
+                group.add(ring1);
+
+                const ring2 = ring1.clone();
+                ring2.position.z = -1.5;
+                group.add(ring2);
                 
                 mesh = group;
             } else {
@@ -3201,7 +3247,7 @@
                 const euler = new THREE.Euler(jetState.pitch, jetState.yaw, jetState.roll, 'YXZ');
                 jet.quaternion.setFromEuler(euler);
 
-                // --- SOFT MAGNET LOCK STEERING (engages ONLY while holding Left-Click Firing AND not shaking mouse) ---
+                // --- SPACE.IO INSTANT SNAP TURN STEERING (snaps turn towards enemy ONLY when holding Fire) ---
                 if (mouseShakeTimer > 0) {
                     mouseShakeTimer--;
                     if (mouseShakeTimer <= 0) isMouseShaking = false;
@@ -3213,10 +3259,10 @@
                     if (toTarget.lengthSq() > 10) {
                         toTarget.normalize();
                         const targetQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), toTarget);
-                        // Gently align jet direction toward target (soft magnetic tracking)
-                        jet.quaternion.slerp(targetQuat, 0.055);
+                        // Rapid snap alignment directly facing enemy jet when firing
+                        jet.quaternion.slerp(targetQuat, 0.28);
                         
-                        // Extract back into jetState so manual flight resumes smoothly
+                        // Extract back into jetState so manual flight resumes seamlessly when fire is released
                         const syncEuler = new THREE.Euler().setFromQuaternion(jet.quaternion, 'YXZ');
                         jetState.pitch = syncEuler.x;
                         jetState.yaw = syncEuler.y;
@@ -3276,7 +3322,7 @@
 
                 // --- TARGET ACQUISITION & LOCK-ON (Guided Missile Assist) ---
                 let closestTarget = null;
-                let minScreenDist = 80; // Expanded lock-on screen radius
+                let minScreenDist = 110; // Expanded lock-on screen radius for fast snap lock
 
                 otherPlayers.forEach((other, id) => {
                     const vector = new THREE.Vector3();
@@ -3299,7 +3345,7 @@
                     }
                 });
 
-                // Continuous Lock Tracking & Radial Ring Special Charge
+                // Continuous Lock Tracking & Fast 1.0s Special Charge
                 if (closestTarget) {
                     if (closestTarget !== currentLockedTarget) {
                         currentLockedTarget = closestTarget;
@@ -3308,8 +3354,8 @@
                     }
                     
                     if (isFiringNormal) {
-                        targetLockDuration = Math.min(2.5, targetLockDuration + (1 / 60.0));
-                        if (targetLockDuration >= 2.5 && !specialAttackFiredForLock) {
+                        targetLockDuration = Math.min(1.0, targetLockDuration + (1 / 60.0));
+                        if (targetLockDuration >= 1.0 && !specialAttackFiredForLock) {
                             if (!jetState.weapons.special.cooldown) {
                                 fireMissile(true); // Launch heavy special homing orb!
                                 specialAttackFiredForLock = true;
@@ -3317,12 +3363,12 @@
                             }
                         }
                     } else {
-                        targetLockDuration = Math.max(0, targetLockDuration - (2 / 60.0));
-                        if (targetLockDuration < 2.5) specialAttackFiredForLock = false;
+                        targetLockDuration = Math.max(0, targetLockDuration - (3 / 60.0));
+                        if (targetLockDuration < 1.0) specialAttackFiredForLock = false;
                     }
                 } else {
                     currentLockedTarget = null;
-                    targetLockDuration = Math.max(0, targetLockDuration - (3 / 60.0));
+                    targetLockDuration = Math.max(0, targetLockDuration - (4 / 60.0));
                     specialAttackFiredForLock = false;
                 }
 
@@ -3346,7 +3392,7 @@
                         lockContainer.style.top  = ty.toFixed(0) + 'px';
                         lockContainer.classList.add('locked');
 
-                        const pctRatio = targetLockDuration / 2.5; // 0.0 to 1.0
+                        const pctRatio = targetLockDuration / 1.0; // 0.0 to 1.0 (1.0s fast charge!)
                         const strokeOffset = 182.2 * (1 - Math.min(1.0, pctRatio));
                         chargeFillRing.style.strokeDashoffset = strokeOffset.toFixed(1);
 
@@ -3360,7 +3406,7 @@
                             aimRing.classList.add('full-lock');
                         } else if (isFiringNormal && pctRatio > 0) {
                             const pct = Math.floor(pctRatio * 100);
-                            lockLabel.textContent = `CHARGING SPECIAL ${pct}%`;
+                            lockLabel.textContent = `CHARGING ${pct}%`;
                             lockLabel.style.color = '#ffaa00';
                             aimRing.classList.remove('full-lock');
                         } else {
