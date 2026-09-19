@@ -22,6 +22,7 @@
             document.head.appendChild(adScript);
         }
     </script>
+    <script src="js/config.js"></script>
     <meta name="google-site-verification" content="ykUDjkWJSMjqVOOOM3kptuqwJR3qtLJxdkbDW_fxZ4o" />
     <meta charset="UTF-8">
     <title>Play Sky Warriors 2 — Free 3D Jet Dogfight Game Online | No Download</title>
@@ -2487,6 +2488,7 @@
         }
 
         // WebSocket multiplayer sync
+        let wsFallbackTimeout = null;
         function connectWebSocket() {
             // Check if user selected Single Player (Offline Training with AI Bots)
             const gameMode = localStorage.getItem('gameMode') || 'multi';
@@ -2511,17 +2513,31 @@
                     username: getUsername(),
                     score: 0
                 });
-                if (gameMode !== 'multi') {
-                    // Spawn bots as offline training sandbox
-                    setTimeout(spawnOfflineBots, 500);
-                }
+                setTimeout(spawnOfflineBots, 500);
                 return;
             }
 
-            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = wsProtocol + '//' + window.location.host;
+            const wsUrl = window.GAME_CONFIG 
+                ? GAME_CONFIG.getWsUrl() 
+                : ((window.location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + window.location.host);
             console.log('🔗 Connecting to WebSocket server:', wsUrl);
             
+            // Set safety fallback timer: if WebSocket server takes long (e.g. Render spin-up) or is unreachable
+            if (wsFallbackTimeout) clearTimeout(wsFallbackTimeout);
+            wsFallbackTimeout = setTimeout(() => {
+                if (!ws || ws.readyState !== WebSocket.OPEN) {
+                    console.warn('⚠️ WebSocket backend unreachable or waking up. Launching AI bot targets.');
+                    if (!playerId) {
+                        playerId = 'offline_player_' + Math.random().toString(36).substr(2, 5);
+                        playerScores.set(playerId, {
+                            username: getUsername(),
+                            score: 0
+                        });
+                        setTimeout(spawnOfflineBots, 300);
+                    }
+                }
+            }, 6000);
+
             try {
                 ws = new WebSocket(wsUrl);
             } catch (e) {
@@ -2534,16 +2550,17 @@
                         score: 0
                     });
                 }
-                if (gameMode !== 'multi') {
-                    setTimeout(spawnOfflineBots, 500);
-                }
+                setTimeout(spawnOfflineBots, 500);
                 return;
             }
             
-            ws.onopen = () => console.log('✅ Connected to game server');
+            ws.onopen = () => {
+                console.log('✅ Connected to game server');
+                if (wsFallbackTimeout) clearTimeout(wsFallbackTimeout);
+            };
             ws.onclose = () => {
-                console.log('❌ Disconnected - attempting reconnect in 2s');
-                setTimeout(connectWebSocket, 2000);
+                console.log('❌ Disconnected - attempting reconnect in 3s');
+                setTimeout(connectWebSocket, 3000);
             };
             ws.onerror = err => console.error('WebSocket Error:', err);
 
@@ -2775,8 +2792,9 @@
             } else {
                 // Online Global Leaderboard via SQLite DB
                 try {
-                    const response = await fetch('/api/leaderboard');
-                    const sorted = await response.json();
+                    const sorted = window.GAME_CONFIG 
+                        ? await GAME_CONFIG.apiFetch('/api/leaderboard') 
+                        : await fetch('/api/leaderboard').then(r => r.json());
                     list.innerHTML = '';
                     sorted.forEach((item) => {
                         const li = document.createElement('li');
@@ -2788,6 +2806,16 @@
                     });
                 } catch (e) {
                     console.error('Failed to fetch leaderboard:', e);
+                    // Fallback to local session scores if fetch fails
+                    const sorted = Array.from(playerScores.entries()).sort((a,b) => b[1].score - a[1].score);
+                    list.innerHTML = '';
+                    sorted.forEach(([id, item]) => {
+                        const li = document.createElement('li');
+                        li.className = 'leaderboard-item';
+                        if (id === playerId) li.classList.add('current-player');
+                        li.innerHTML = `<span>${item.username}</span><span>${item.score}</span>`;
+                        list.appendChild(li);
+                    });
                 }
             }
         }

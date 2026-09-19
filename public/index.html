@@ -22,6 +22,7 @@
             document.head.appendChild(adScript);
         }
     </script>
+    <script src="js/config.js"></script>
     <meta name="google-site-verification" content="ykUDjkWJSMjqVOOOM3kptuqwJR3qtLJxdkbDW_fxZ4o" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
@@ -1152,14 +1153,21 @@
                 document.getElementById('players-online').innerHTML = '<span class="live-dot"></span> OFFLINE TRAINING ACTIVE';
                 return;
             }
-            fetch('/api/players-count')
-                .then(res => res.json())
+            const fetchPromise = window.GAME_CONFIG
+                ? GAME_CONFIG.apiFetch('/api/players-count')
+                : fetch('/api/players-count').then(r => r.json());
+
+            fetchPromise
                 .then(data => {
                     const count = data.count || 0;
                     document.getElementById('players-online').innerHTML = '<span class="live-dot"></span> ' + count + ' PILOT(S) IN MULTIPLAYER';
                 })
                 .catch(() => {
-                    document.getElementById('players-online').innerHTML = '<span class="live-dot" style="background:#ff4444"></span> MULTIPLAYER OFFLINE';
+                    if (window.GAME_CONFIG && GAME_CONFIG.isGitHubPages()) {
+                        document.getElementById('players-online').innerHTML = '<span class="live-dot" style="background:#ffaa00"></span> CONNECTING TO RENDER SERVER...';
+                    } else {
+                        document.getElementById('players-online').innerHTML = '<span class="live-dot" style="background:#ff4444"></span> MULTIPLAYER OFFLINE';
+                    }
                 });
         }
         updatePlayersOnline();

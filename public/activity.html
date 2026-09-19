@@ -6,6 +6,7 @@
     <title>Sky-Warriors 2 | Activity Log & Leaderboard</title>
     <meta name="robots" content="noindex">
     <link rel="icon" type="image/png" href="favicon-32x32[1].png">
+    <script src="js/config.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@700&display=swap');
 
@@ -277,8 +278,7 @@
 
     async function loadLeaderboard() {
         try {
-            const res = await fetch('/api/leaderboard');
-            const data = await res.json();
+            const data = window.GAME_CONFIG ? await GAME_CONFIG.apiFetch('/api/leaderboard') : await fetch('/api/leaderboard').then(r => r.json());
             const tbody = document.getElementById('lb-body');
             if (!data.length) {
                 tbody.innerHTML = '<tr><td colspan="3" class="empty-msg">No scores yet. Start playing!</td></tr>';
@@ -297,8 +297,7 @@
 
     async function loadLog() {
         try {
-            const res = await fetch('/api/activity-log');
-            const data = await res.json();
+            const data = window.GAME_CONFIG ? await GAME_CONFIG.apiFetch('/api/activity-log') : await fetch('/api/activity-log').then(r => r.json());
             const el = document.getElementById('log-list');
             if (!data.length) {
                 el.innerHTML = '<div class="empty-msg">No activity yet. Join a game!</div>';
@@ -322,8 +321,7 @@
 
     async function loadOnline() {
         try {
-            const res = await fetch('/api/online');
-            const data = await res.json();
+            const data = window.GAME_CONFIG ? await GAME_CONFIG.apiFetch('/api/online') : await fetch('/api/online').then(r => r.json());
             document.getElementById('online-count').textContent = data.length;
             document.getElementById('online-list').textContent = data.length
                 ? data.map(p => p.username).join(' · ')
