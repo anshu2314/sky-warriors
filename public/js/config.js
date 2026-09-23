@@ -8,13 +8,13 @@
             return customUrl.trim().replace(/\/+$/, '');
         }
         
-        // If running on GitHub Pages or local file protocol, default to live Render backend
-        if (window.location.hostname.includes('github.io') || window.location.protocol === 'file:') {
-            return RENDER_BACKEND_URL;
+        // If hosted directly on the Render server, use same origin
+        if (window.location.hostname.includes('onrender.com')) {
+            return window.location.origin;
         }
         
-        // Default to same origin (running directly on Render host or local express server)
-        return window.location.origin;
+        // Route all other clients (GitHub Pages, localhost, itch.io, file:, etc.) to the central Render backend
+        return RENDER_BACKEND_URL;
     }
 
     function getWsUrl() {

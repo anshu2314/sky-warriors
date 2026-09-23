@@ -30,21 +30,27 @@
     <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
     
-    <!-- Open Graph / Facebook -->
+    <!-- Open Graph / Facebook / Discord / Reddit / WhatsApp / Telegram -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://sky-warriors-2.onrender.com/game.html">
+    <meta property="og:site_name" content="Sky Warriors 2">
     <meta property="og:title" content="Sky Warriors 2 — Free 3D Jet Dogfight Game | Play Now">
     <meta property="og:description" content="Lock on. Fire. Dominate. Fly fighter jets in intense 3D multiplayer dogfights — free in your browser with zero downloads.">
-    <meta property="og:image" content="https://sky-warriors-2.onrender.com/gameplay-screenshot.jpg">
-    <meta property="og:image:width" content="512">
-    <meta property="og:image:height" content="512">
-    <meta property="og:site_name" content="Sky Warriors 2">
+    <meta property="og:image" content="https://sky-warriors-2.onrender.com/og-preview.jpg">
+    <meta property="og:image:secure_url" content="https://sky-warriors-2.onrender.com/og-preview.jpg">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1024">
+    <meta property="og:image:height" content="576">
+    <meta property="og:image:alt" content="Sky Warriors 2 — 3D Jet Dogfight Browser Game">
+    <meta property="og:locale" content="en_US">
     
-    <!-- Twitter Cards -->
+    <!-- Twitter / X Cards (Large Preview Below Link) -->
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://sky-warriors-2.onrender.com/game.html">
     <meta name="twitter:title" content="Sky Warriors 2 — Free 3D Jet Dogfight Browser Game">
     <meta name="twitter:description" content="Lock onto enemy jets, fire homing missiles, and climb the global leaderboard. Play free — no download needed!">
-    <meta name="twitter:image" content="https://sky-warriors-2.onrender.com/gameplay-screenshot.jpg">
+    <meta name="twitter:image" content="https://sky-warriors-2.onrender.com/og-preview.jpg">
+    <meta name="twitter:image:alt" content="Sky Warriors 2 — 3D Jet Dogfight Browser Game">
     
     <!-- JSON-LD Structured Data -->
     <script type="application/ld+json">
@@ -62,8 +68,8 @@
         "applicationSubCategory": "Browser Game",
         "operatingSystem": "Any (Web Browser)",
         "url": "https://sky-warriors-2.onrender.com/game.html",
-        "image": ["https://sky-warriors-2.onrender.com/gameplay-screenshot.jpg", "https://sky-warriors-2.onrender.com/gameplay-hud-screenshot.png"],
-        "screenshot": ["https://sky-warriors-2.onrender.com/gameplay-screenshot.jpg", "https://sky-warriors-2.onrender.com/gameplay-hud-screenshot.png"],
+        "image": ["https://sky-warriors-2.onrender.com/og-preview.jpg", "https://sky-warriors-2.onrender.com/gameplay-screenshot.jpg", "https://sky-warriors-2.onrender.com/gameplay-hud-screenshot.png"],
+        "screenshot": ["https://sky-warriors-2.onrender.com/og-preview.jpg", "https://sky-warriors-2.onrender.com/gameplay-screenshot.jpg", "https://sky-warriors-2.onrender.com/gameplay-hud-screenshot.png"],
         "offers": {
           "@type": "Offer",
           "price": "0",
@@ -97,9 +103,44 @@
             margin: 0; 
             overflow: hidden; 
             background-color: #050510;
+            cursor: default;
+            user-select: none;
         }
         canvas { 
             display: block; 
+            cursor: crosshair;
+        }
+        button, .leaderboard-button, .respawn-button, #tutorial-overlay, .leaderboard-panel, a {
+            cursor: pointer !important;
+        }
+        
+
+        /* Safe Takeoff Grace Period Banner */
+        #grace-period-banner {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 20, 30, 0.85);
+            border: 1px solid #00ffcc;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.4);
+            color: #00ffcc;
+            padding: 8px 24px;
+            border-radius: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            z-index: 1000;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: bannerPulse 1.5s infinite alternate;
+        }
+        @keyframes bannerPulse {
+            from { box-shadow: 0 0 10px rgba(0,255,204,0.3); opacity: 0.85; }
+            to { box-shadow: 0 0 25px rgba(0,255,204,0.8); opacity: 1; }
         }
         
         /* Monospace Sci-Fi HUD */
@@ -1064,7 +1105,7 @@
     <!-- Game UI Overlay -->
     <div id="hud">
         <div class="hud-row"><strong>CALLSIGN:</strong> <span id="player-name">Player</span></div>
-        <div class="hud-row"><strong>HEALTH:</strong> <span id="health-value"><span id="health">100</span>%</span></div>
+        <div class="hud-row"><strong>HEALTH:</strong> <span id="health-value"><span id="health">100</span>%</span> <span id="regen-badge" style="display:none; color:#00ffaa; font-weight:bold; font-size:11px; margin-left:6px; letter-spacing:1px; text-shadow:0 0 8px rgba(0,255,170,0.85);"><i class="fas fa-shield-alt"></i> REGEN +9/s</span></div>
         <div class="hud-row"><strong>SCORE:</strong> <span id="score">0</span></div>
         <div class="hud-row"><strong>SPEED:</strong> <span id="hud-speed">0</span> KT</div>
         <div class="hud-row"><strong>ALTITUDE:</strong> <span id="hud-alt">0.5</span> FT</div>
@@ -1075,7 +1116,7 @@
     
     <div id="controls-help">
         <strong>FLIGHT MANUAL:</strong><br>
-        • MOUSE / ARROWS to Steer<br>
+        • MOUSE / ARROWS to Steer (Up=Up, Down=Down)<br>
         • W/S to Adjust Throttle<br>
         • SHIFT for Afterburner<br>
         • HOLD LEFT CLICK / SPACE to Spray & Charge<br>
@@ -1083,6 +1124,7 @@
     </div>
     
     <div id="warning-msg">WARNING: LEAVING AIRSPACE!</div>
+    <div id="grace-period-banner" style="display:none;">🛡️ SAFE AIRSPACE: TAKEOFF WINDOW (<span id="grace-timer">12</span>s)</div>
     
     <div id="aim-ring"></div>
     <div id="crosshair">
@@ -1166,7 +1208,7 @@
         const particles = [];
         const clouds = [];
         const gtaExplosions = []; // Dynamic track for premium GTA-style explosion meshes
-        let gameStartTime = null;
+        let gameStartTime = performance.now();
         let fireSideLeft = false; // Alternating wing barrels
         let currentLockedTarget = null; // Currently targeted enemy jet for homing missile assist
         let targetLockTime = 0; // Tracks duration of continuous lock-on
@@ -1306,37 +1348,439 @@
             scene.add(r);
         }
 
-        // Red glowing border forcefields (Blocks players visually & marks boundaries - Enlarged size)
-        const forceFieldMat = new THREE.MeshBasicMaterial({
-            color: 0xff0033,
+        // --- POLISHED GROUND & MILITARY AIRBASE ASSETS (ZERO OVERLAPS) ---
+        let atcRadarMesh = null; // For animated rotation
+
+        // Centralized Airbase & Corridor exclusion zone check (prevents road, park, building, tree overlaps)
+        function isAirbaseZone(x, z) {
+            // 1. Runway Road Corridor (Keep x = -32 to +32 clear along entire runway)
+            if (Math.abs(x) < 32 && Math.abs(z) < 1850) return true;
+            // 2. Parking Apron, Taxiways, Hangars, Helipads, and ATC Tower (x: 15 to 115, z: -350 to 300)
+            if (x >= 15 && x <= 115 && z >= -350 && z <= 300) return true;
+            // 3. Fuel Storage Tank Depot (x: -95 to -25, z: -115 to -15)
+            if (x >= -95 && x <= -25 && z >= -115 && z <= -15) return true;
+            // 4. Scenic River Canal Corridor along eastern landscape (x: 340 to 420)
+            if (Math.abs(x - 380) < 45) return true;
+            return false;
+        }
+
+        function createMilitaryAirbaseAndGroundFeatures() {
+            const airbaseGroup = new THREE.Group();
+
+            // 1. Runway Threshold Markings (Piano Keys)
+            const stripeGeom = new THREE.PlaneGeometry(0.7, 10);
+            stripeGeom.rotateX(-Math.PI / 2);
+            const stripeMat = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
+            
+            const thresholdZPositions = [-1700, -750, 0, 750, 1700];
+            thresholdZPositions.forEach(tz => {
+                for (let s = -4.5; s <= 4.5; s += 1.25) {
+                    const stripe = new THREE.Mesh(stripeGeom, stripeMat);
+                    stripe.position.set(s, 0.12, tz);
+                    airbaseGroup.add(stripe);
+                }
+            });
+
+            // 2. Runway Edge Caution Stripes (Yellow hazard curbs along both runway flanks)
+            const curbGeom = new THREE.PlaneGeometry(0.6, 3600);
+            curbGeom.rotateX(-Math.PI / 2);
+            const curbMat = new THREE.MeshStandardMaterial({ color: 0xcca010, roughness: 0.7 });
+            const curbL = new THREE.Mesh(curbGeom, curbMat);
+            curbL.position.set(-6.3, 0.11, 0);
+            airbaseGroup.add(curbL);
+            const curbR = new THREE.Mesh(curbGeom, curbMat);
+            curbR.position.set(6.3, 0.11, 0);
+            airbaseGroup.add(curbR);
+
+            // 3. Concrete Parking Apron ("Park" Tarmac) on Right Flank (x: 30 to 100, z: -230 to +230)
+            const apronGeom = new THREE.PlaneGeometry(70, 460);
+            apronGeom.rotateX(-Math.PI / 2);
+            const apronMat = new THREE.MeshStandardMaterial({ color: 0x2b3340, roughness: 0.75, metalness: 0.1 });
+            const apron = new THREE.Mesh(apronGeom, apronMat);
+            apron.position.set(65, 0.108, 0);
+            airbaseGroup.add(apron);
+
+            // Apron Outer Caution Border (clean borders that never cross taxiway entrances)
+            const borderMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, toneMapped: false });
+            
+            // East perimeter (outer edge away from runway)
+            const eastBorderGeom = new THREE.PlaneGeometry(1.0, 462);
+            eastBorderGeom.rotateX(-Math.PI / 2);
+            const eastBorder = new THREE.Mesh(eastBorderGeom, borderMat);
+            eastBorder.position.set(100.5, 0.115, 0);
+            airbaseGroup.add(eastBorder);
+
+            // North and South perimeter caps
+            const capBorderGeom = new THREE.PlaneGeometry(71, 1.0);
+            capBorderGeom.rotateX(-Math.PI / 2);
+            const northBorder = new THREE.Mesh(capBorderGeom, borderMat);
+            northBorder.position.set(65, 0.115, 230.5);
+            airbaseGroup.add(northBorder);
+            const southBorder = new THREE.Mesh(capBorderGeom, borderMat);
+            southBorder.position.set(65, 0.115, -230.5);
+            airbaseGroup.add(southBorder);
+
+            // West perimeter segments between taxiways (leaving taxiway entrances wide open!)
+            const westSegs = [
+                { z: -193.5, len: 73 },
+                { z: -75, len: 136 },
+                { z: 75, len: 136 },
+                { z: 193.5, len: 73 }
+            ];
+            westSegs.forEach(seg => {
+                const segGeom = new THREE.PlaneGeometry(1.0, seg.len);
+                segGeom.rotateX(-Math.PI / 2);
+                const segMesh = new THREE.Mesh(segGeom, borderMat);
+                segMesh.position.set(29.5, 0.115, seg.z);
+                airbaseGroup.add(segMesh);
+            });
+
+            // 4. Connecting Taxiways (Cleanly bridging runway edge x = 6.6 to apron edge x = 30.0 with 0 overlap!)
+            const taxiZ = [-150, 0, 150];
+            const taxiwayGeom = new THREE.PlaneGeometry(23.4, 14);
+            taxiwayGeom.rotateX(-Math.PI / 2);
+            const taxiYellowLineGeom = new THREE.PlaneGeometry(23.4, 0.35);
+            taxiYellowLineGeom.rotateX(-Math.PI / 2);
+            const taxiYellowMat = new THREE.MeshBasicMaterial({ color: 0xffcc00, toneMapped: false });
+
+            taxiZ.forEach(tz => {
+                const tw = new THREE.Mesh(taxiwayGeom, apronMat);
+                tw.position.set(18.3, 0.108, tz);
+                airbaseGroup.add(tw);
+
+                const yLine = new THREE.Mesh(taxiYellowLineGeom, taxiYellowMat);
+                yLine.position.set(18.3, 0.125, tz);
+                airbaseGroup.add(yLine);
+            });
+
+            // 5. Hardened Aircraft Hangars along the Apron (Arched Military Shelters)
+            const hangarArchGeom = new THREE.CylinderGeometry(14, 14, 32, 16, 1, false, 0, Math.PI);
+            hangarArchGeom.rotateZ(-Math.PI / 2);
+            const hangarMat = new THREE.MeshStandardMaterial({ 
+                color: 0x222933, 
+                roughness: 0.5, 
+                metalness: 0.7, 
+                flatShading: true,
+                side: THREE.DoubleSide
+            });
+            const hangarTrimMat = new THREE.MeshBasicMaterial({ color: 0xffaa00, toneMapped: false });
+
+            const hangarPositions = [
+                { x: 84, z: -140 },
+                { x: 84, z: 0 },
+                { x: 84, z: 140 }
+            ];
+
+            hangarPositions.forEach(hpos => {
+                const hangarGroup = new THREE.Group();
+                const arch = new THREE.Mesh(hangarArchGeom, hangarMat);
+                arch.position.set(0, 0, 0);
+                hangarGroup.add(arch);
+
+                // Warning arch rim at entrance
+                const rimGeom = new THREE.TorusGeometry(14, 0.6, 8, 24, Math.PI);
+                rimGeom.rotateY(Math.PI / 2);
+                const rim = new THREE.Mesh(rimGeom, hangarTrimMat);
+                rim.position.set(-16, 0, 0);
+                hangarGroup.add(rim);
+
+                // Interior floor
+                const floorGeom = new THREE.PlaneGeometry(32, 28);
+                floorGeom.rotateX(-Math.PI / 2);
+                const floor = new THREE.Mesh(floorGeom, apronMat);
+                floor.position.set(0, 0.15, 0);
+                hangarGroup.add(floor);
+
+                // Interior subtle cyan worklight
+                const workLight = new THREE.PointLight(0x00ffcc, 1.2, 35);
+                workLight.position.set(0, 8, 0);
+                hangarGroup.add(workLight);
+
+                hangarGroup.position.set(hpos.x, 0, hpos.z);
+                airbaseGroup.add(hangarGroup);
+            });
+
+            // 6. Air Traffic Control (ATC) Tower with Spinning Radar
+            const atcGroup = new THREE.Group();
+            const towerShaftGeom = new THREE.CylinderGeometry(3.5, 5.0, 46, 8);
+            const towerMat = new THREE.MeshStandardMaterial({ color: 0x2c3545, roughness: 0.8, metalness: 0.3 });
+            const shaft = new THREE.Mesh(towerShaftGeom, towerMat);
+            shaft.position.y = 23;
+            atcGroup.add(shaft);
+
+            const cabGeom = new THREE.CylinderGeometry(7.5, 6.0, 6.5, 8);
+            const cabMat = new THREE.MeshStandardMaterial({
+                color: 0x00ffff,
+                roughness: 0.1,
+                metalness: 0.9,
+                transparent: true,
+                opacity: 0.75,
+                emissive: 0x003344,
+                toneMapped: false
+            });
+            const cab = new THREE.Mesh(cabGeom, cabMat);
+            cab.position.y = 48;
+            atcGroup.add(cab);
+
+            const roofGeom = new THREE.CylinderGeometry(8, 8, 1.5, 8);
+            const roof = new THREE.Mesh(roofGeom, towerMat);
+            roof.position.y = 52;
+            atcGroup.add(roof);
+
+            const radarGroup = new THREE.Group();
+            const dishGeom = new THREE.CylinderGeometry(4.5, 0.5, 1.2, 12, 1, false, 0, Math.PI);
+            dishGeom.rotateZ(Math.PI / 2);
+            const dishMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.8, roughness: 0.2 });
+            const dish = new THREE.Mesh(dishGeom, dishMat);
+            dish.position.set(0, 2.5, 0);
+            radarGroup.add(dish);
+
+            const mastGeom = new THREE.CylinderGeometry(0.4, 0.4, 3, 6);
+            const mast = new THREE.Mesh(mastGeom, towerMat);
+            mast.position.y = 1.5;
+            radarGroup.add(mast);
+
+            radarGroup.position.set(0, 52.8, 0);
+            atcGroup.add(radarGroup);
+            atcRadarMesh = radarGroup;
+
+            const beaconGeom = new THREE.SphereGeometry(0.6, 8, 8);
+            const beaconMat = new THREE.MeshBasicMaterial({ color: 0xff0044, toneMapped: false });
+            const beacon = new THREE.Mesh(beaconGeom, beaconMat);
+            beacon.position.set(0, 57, 0);
+            atcGroup.add(beacon);
+
+            atcGroup.position.set(55, 0, -290);
+            airbaseGroup.add(atcGroup);
+
+            // 7. Industrial Fuel Storage Tank Depot (Safely isolated on west flank)
+            const fuelDepotGroup = new THREE.Group();
+            const tankGeom = new THREE.CylinderGeometry(7.5, 7.5, 12, 16);
+            const tankMat = new THREE.MeshStandardMaterial({ color: 0x4a5568, roughness: 0.4, metalness: 0.6 });
+            const stripeBandGeom = new THREE.CylinderGeometry(7.55, 7.55, 2.0, 16);
+            const stripeBandMat = new THREE.MeshBasicMaterial({ color: 0xff3300, toneMapped: false });
+
+            const tankPositions = [
+                { x: -52, z: -80 },
+                { x: -52, z: -50 },
+                { x: -68, z: -80 },
+                { x: -68, z: -50 }
+            ];
+
+            tankPositions.forEach(tpos => {
+                const tank = new THREE.Mesh(tankGeom, tankMat);
+                tank.position.set(tpos.x, 6, tpos.z);
+                fuelDepotGroup.add(tank);
+
+                const stripeBand = new THREE.Mesh(stripeBandGeom, stripeBandMat);
+                stripeBand.position.set(tpos.x, 8, tpos.z);
+                fuelDepotGroup.add(stripeBand);
+            });
+
+            const bermGeom = new THREE.BoxGeometry(36, 2.5, 48);
+            const bermMat = new THREE.MeshStandardMaterial({ color: 0x22272e, roughness: 0.9 });
+            const berm = new THREE.Mesh(bermGeom, bermMat);
+            berm.position.set(-60, 1.25, -65);
+            fuelDepotGroup.add(berm);
+
+            airbaseGroup.add(fuelDepotGroup);
+
+            // 8. Concrete Helipads on the Apron
+            const padGeom = new THREE.CylinderGeometry(10, 10, 0.2, 24);
+            const padMat = new THREE.MeshStandardMaterial({ color: 0x2d3748, roughness: 0.8 });
+            const ringGeom = new THREE.RingGeometry(7.5, 8.5, 24);
+            ringGeom.rotateX(-Math.PI / 2);
+            const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, toneMapped: false });
+
+            const helipadPositions = [
+                { x: 48, z: -75 },
+                { x: 48, z: 75 }
+            ];
+
+            helipadPositions.forEach(hpos => {
+                const pad = new THREE.Mesh(padGeom, padMat);
+                pad.position.set(hpos.x, 0.15, hpos.z);
+                airbaseGroup.add(pad);
+
+                const ring = new THREE.Mesh(ringGeom, ringMat);
+                ring.position.set(hpos.x, 0.26, hpos.z);
+                airbaseGroup.add(ring);
+
+                const hStemGeom = new THREE.PlaneGeometry(0.8, 5.5);
+                hStemGeom.rotateX(-Math.PI / 2);
+                const hCrossGeom = new THREE.PlaneGeometry(3.0, 0.8);
+                hCrossGeom.rotateX(-Math.PI / 2);
+                const hMat = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
+                
+                const stem1 = new THREE.Mesh(hStemGeom, hMat);
+                stem1.position.set(hpos.x - 1.5, 0.27, hpos.z);
+                airbaseGroup.add(stem1);
+
+                const stem2 = new THREE.Mesh(hStemGeom, hMat);
+                stem2.position.set(hpos.x + 1.5, 0.27, hpos.z);
+                airbaseGroup.add(stem2);
+
+                const cross = new THREE.Mesh(hCrossGeom, hMat);
+                cross.position.set(hpos.x, 0.27, hpos.z);
+                airbaseGroup.add(cross);
+            });
+
+            // 9. Scenic River Canal along eastern landscape (parallel at x = 380, never cuts across runway!)
+            const riverGeom = new THREE.PlaneGeometry(38, 3600);
+            riverGeom.rotateX(-Math.PI / 2);
+            const riverMat = new THREE.MeshStandardMaterial({
+                color: 0x0a2540,
+                roughness: 0.15,
+                metalness: 0.85,
+                transparent: true,
+                opacity: 0.92
+            });
+            const river = new THREE.Mesh(riverGeom, riverMat);
+            river.position.set(380, 0.08, 0);
+            airbaseGroup.add(river);
+
+            const bankGeom = new THREE.PlaneGeometry(42, 3600);
+            bankGeom.rotateX(-Math.PI / 2);
+            const bankMat = new THREE.MeshBasicMaterial({ color: 0x0088cc, toneMapped: false });
+            const bank = new THREE.Mesh(bankGeom, bankMat);
+            bank.position.set(380, 0.07, 0);
+            airbaseGroup.add(bank);
+
+            // 10. Battlefield Scorched Impact Craters (Planted in wilderness)
+            const craterGeom = new THREE.RingGeometry(3, 14, 18);
+            craterGeom.rotateX(-Math.PI / 2);
+            const craterMat = new THREE.MeshStandardMaterial({
+                color: 0x111317,
+                roughness: 0.98,
+                metalness: 0.05
+            });
+            const craterPositions = [
+                { x: -320, z: -400 },
+                { x: 220, z: -550 },
+                { x: -450, z: 350 },
+                { x: 220, z: 620 },
+                { x: -280, z: 880 }
+            ];
+            craterPositions.forEach(cpos => {
+                const crater = new THREE.Mesh(craterGeom, craterMat);
+                crater.position.set(cpos.x, 0.12, cpos.z);
+                airbaseGroup.add(crater);
+
+                const emberGeom = new THREE.CircleGeometry(3.2, 12);
+                emberGeom.rotateX(-Math.PI / 2);
+                const emberMat = new THREE.MeshBasicMaterial({ color: 0x330800, toneMapped: false });
+                const ember = new THREE.Mesh(emberGeom, emberMat);
+                ember.position.set(cpos.x, 0.13, cpos.z);
+                airbaseGroup.add(ember);
+            });
+
+            scene.add(airbaseGroup);
+        }
+        createMilitaryAirbaseAndGroundFeatures();
+
+        // Procedural Holographic Cyber Grid Forcefield Texture
+        function createForceFieldTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'rgba(10, 0, 30, 0.08)';
+            ctx.fillRect(0, 0, 128, 128);
+            
+            // Outer glowing cell border
+            ctx.strokeStyle = '#ff0066';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(1, 1, 126, 126);
+            
+            // Cyber laser grid lines
+            ctx.strokeStyle = '#bf00ff';
+            ctx.lineWidth = 1.2;
+            for (let p = 32; p < 128; p += 32) {
+                ctx.beginPath();
+                ctx.moveTo(p, 0); ctx.lineTo(p, 128);
+                ctx.moveTo(0, p); ctx.lineTo(128, p);
+                ctx.stroke();
+            }
+            
+            // Hexagon tech motif
+            ctx.strokeStyle = '#00ffcc';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(40, 40, 48, 48);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            return tex;
+        }
+
+        const forceFieldTexSide = createForceFieldTexture();
+        forceFieldTexSide.repeat.set(36, 3);
+        const forceFieldTexEnd = createForceFieldTexture();
+        forceFieldTexEnd.repeat.set(20, 3);
+
+        const forceFieldMatSide = new THREE.MeshBasicMaterial({
+            map: forceFieldTexSide,
+            color: 0xff0088,
             transparent: true,
-            opacity: 0.1,
+            opacity: 0.32,
             side: THREE.DoubleSide,
-            toneMapped: false
+            toneMapped: false,
+            depthWrite: false
+        });
+
+        const forceFieldMatEnd = new THREE.MeshBasicMaterial({
+            map: forceFieldTexEnd,
+            color: 0xff0088,
+            transparent: true,
+            opacity: 0.32,
+            side: THREE.DoubleSide,
+            toneMapped: false,
+            depthWrite: false
         });
 
         // Left wall
         const leftWallGeom = new THREE.PlaneGeometry(3600, 300);
-        const leftWall = new THREE.Mesh(leftWallGeom, forceFieldMat);
+        const leftWall = new THREE.Mesh(leftWallGeom, forceFieldMatSide);
         leftWall.position.set(-960, 150, 0);
         leftWall.rotation.y = Math.PI / 2;
         scene.add(leftWall);
 
         // Right wall
-        const rightWall = leftWall.clone();
-        rightWall.position.x = 960;
+        const rightWall = new THREE.Mesh(leftWallGeom, forceFieldMatSide);
+        rightWall.position.set(960, 150, 0);
+        rightWall.rotation.y = Math.PI / 2;
         scene.add(rightWall);
 
         // Front wall
         const frontWallGeom = new THREE.PlaneGeometry(2000, 300);
-        const frontWall = new THREE.Mesh(frontWallGeom, forceFieldMat);
+        const frontWall = new THREE.Mesh(frontWallGeom, forceFieldMatEnd);
         frontWall.position.set(0, 150, 1760);
         scene.add(frontWall);
 
         // Back wall
-        const backWall = frontWall.clone();
-        backWall.position.z = -1760;
+        const backWall = new THREE.Mesh(frontWallGeom, forceFieldMatEnd);
+        backWall.position.set(0, 150, -1760);
         scene.add(backWall);
+
+        // Glowing perimeter laser beams at top of boundary (y = 300)
+        const beamMat = new THREE.MeshBasicMaterial({ color: 0xff0055, toneMapped: false });
+        const sideBeamGeom = new THREE.CylinderGeometry(0.8, 0.8, 3600, 6);
+        sideBeamGeom.rotateX(Math.PI / 2);
+        const beamL = new THREE.Mesh(sideBeamGeom, beamMat);
+        beamL.position.set(-960, 300, 0);
+        scene.add(beamL);
+        const beamR = new THREE.Mesh(sideBeamGeom, beamMat);
+        beamR.position.set(960, 300, 0);
+        scene.add(beamR);
+
+        const endBeamGeom = new THREE.CylinderGeometry(0.8, 0.8, 2000, 6);
+        endBeamGeom.rotateZ(Math.PI / 2);
+        const beamF = new THREE.Mesh(endBeamGeom, beamMat);
+        beamF.position.set(0, 300, 1760);
+        scene.add(beamF);
+        const beamB = new THREE.Mesh(endBeamGeom, beamMat);
+        beamB.position.set(0, 300, -1760);
+        scene.add(beamB);
 
         // Procedural 3D Fighter Jet Builder (Standard primitives, highly optimized, 0 lags)
         function createProceduralJet(isEnemy = false) {
@@ -1511,9 +1955,21 @@
         let jet = createProceduralJet(false);
         jet.scale.set(1.48, 1.48, 1.48); // Enlarged jet model for superior visibility and cool look!
         jet.position.set(0, 30, 0);
-        jet.rotation.y = Math.PI; // point forward
         scene.add(jet);
         isModelLoaded = true;
+
+        // Nanite Repair Shield Aura (Visual indicator when health regeneration is active)
+        const shieldAuraGeom = new THREE.SphereGeometry(4.8, 16, 16);
+        const shieldAuraMat = new THREE.MeshBasicMaterial({
+            color: 0x00ffcc,
+            transparent: true,
+            opacity: 0.18,
+            wireframe: true,
+            toneMapped: false
+        });
+        const jetShieldAura = new THREE.Mesh(shieldAuraGeom, shieldAuraMat);
+        jetShieldAura.visible = false;
+        jet.add(jetShieldAura);
 
         // Flight variables & controls
         const jetState = {
@@ -1654,8 +2110,8 @@
                 const tx = (Math.random() - 0.5) * 1900;
                 const tz = (Math.random() - 0.5) * 3500;
                 
-                // Exclude airport/runway zones and buildings buffer
-                if (Math.abs(tx) < 35) continue;
+                // Exclude entire airbase zone (runway, apron, taxiways, hangars, depot, river)
+                if (isAirbaseZone(tx, tz)) continue;
 
                 const scale = 0.7 + Math.random() * 0.5;
                 dummy.position.set(tx, 0, tz);
@@ -1711,55 +2167,136 @@
         }
         createEnvironment();
 
-        // 4. Procedural Sci-Fi Skyscrapers (Not too tall to avoid obscuring the jet combat)
+        // 4. Procedural High-Tech Cyber Metropolis Skyline
+        const buildingBeacons = [];
         function createSkyscrapers() {
-            const buildingCount = 45;
+            const buildingCount = 115;
             const boxGeom = new THREE.BoxGeometry(1, 1, 1);
             
-            // Dark gray structured body
+            // PBR Architectural Materials
             const bodyMat = new THREE.MeshStandardMaterial({
-                color: 0x1d2430,
-                roughness: 0.8,
-                metalness: 0.25,
+                color: 0x141a24,
+                roughness: 0.35,
+                metalness: 0.82,
+                flatShading: true
+            });
+            const darkBodyMat = new THREE.MeshStandardMaterial({
+                color: 0x0c1017,
+                roughness: 0.45,
+                metalness: 0.9,
                 flatShading: true
             });
 
-            // Glowing cyan/magenta window bands (HDR bloom)
+            // Vivid Sci-Fi Neon Emissive Materials
             const cyanWindowMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, toneMapped: false });
             const magentaWindowMat = new THREE.MeshBasicMaterial({ color: 0xff00bb, toneMapped: false });
+            const amberWindowMat = new THREE.MeshBasicMaterial({ color: 0xffaa00, toneMapped: false });
+            const beaconMat = new THREE.MeshBasicMaterial({ color: 0xff0033, toneMapped: false });
+            const helipadMat = new THREE.MeshBasicMaterial({ color: 0x00ffaa, side: THREE.DoubleSide, toneMapped: false });
+
+            // Reusable geometries
+            const spireGeom = new THREE.CylinderGeometry(0.12, 0.45, 12, 6);
+            const beaconSphereGeom = new THREE.SphereGeometry(0.55, 6, 6);
+            const helipadGeom = new THREE.RingGeometry(2.5, 4.8, 16);
+            helipadGeom.rotateX(-Math.PI / 2);
+            const hexCylGeom = new THREE.CylinderGeometry(1, 1, 1, 6);
 
             for (let i = 0; i < buildingCount; i++) {
-                // Spawn randomly on the sides, avoiding the central runway corridor (x = -35 to 35)
-                let bx = (Math.random() - 0.5) * 1800;
-                while (Math.abs(bx) < 35) {
+                // Scatter across terrain while keeping airbase zone, runway, apron, and depot 100% clear!
+                let bx, bz;
+                do {
                     bx = (Math.random() - 0.5) * 1800;
-                }
-                const bz = (Math.random() - 0.5) * 3400;
+                    bz = (Math.random() - 0.5) * 3400;
+                } while (isAirbaseZone(bx, bz));
 
                 // Scale variables
-                const w = 14 + Math.random() * 18;
-                const h = 30 + Math.random() * 60; // Max height 90 units (leaves upper airspace 90-220 open for dogfights)
-                const d = 14 + Math.random() * 18;
+                const w = 15 + Math.random() * 20;
+                const h = 32 + Math.random() * 75; // Heights up to 107 units
+                const d = 15 + Math.random() * 20;
 
                 const building = new THREE.Group();
+                const archetype = i % 3; // 0: Tiered Spire, 1: Hexagonal HQ, 2: Helipad Monolith
 
-                // Main tower block
-                const block = new THREE.Mesh(boxGeom, bodyMat);
-                block.scale.set(w, h, d);
-                block.position.y = h / 2;
-                block.castShadow = true;
-                block.receiveShadow = true;
-                building.add(block);
+                if (archetype === 0) {
+                    // --- ARCHETYPE 0: TIERED CYBER SPIRE WITH RED WARNING BEACON ---
+                    const baseH = h * 0.55;
+                    const baseBlock = new THREE.Mesh(boxGeom, bodyMat);
+                    baseBlock.scale.set(w, baseH, d);
+                    baseBlock.position.y = baseH / 2;
+                    building.add(baseBlock);
 
-                // Glowing floor rings
-                const winMat = Math.random() > 0.5 ? cyanWindowMat : magentaWindowMat;
-                const floors = 3 + Math.floor(Math.random() * 3);
-                for (let f = 0; f < floors; f++) {
-                    const fy = (h / (floors + 1)) * (f + 1);
-                    const ringGeom = new THREE.BoxGeometry(w + 0.3, 1.0, d + 0.3);
-                    const ring = new THREE.Mesh(ringGeom, winMat);
-                    ring.position.set(0, fy, 0);
-                    building.add(ring);
+                    const topH = h * 0.45;
+                    const topW = w * 0.65;
+                    const topD = d * 0.65;
+                    const topBlock = new THREE.Mesh(boxGeom, darkBodyMat);
+                    topBlock.scale.set(topW, topH, topD);
+                    topBlock.position.y = baseH + topH / 2;
+                    building.add(topBlock);
+
+                    // Glowing floor rings
+                    const winMat = (i % 2 === 0) ? cyanWindowMat : magentaWindowMat;
+                    const floors = 3 + Math.floor(Math.random() * 3);
+                    for (let f = 0; f < floors; f++) {
+                        const fy = (baseH / (floors + 1)) * (f + 1);
+                        const ringGeom = new THREE.BoxGeometry(w + 0.3, 1.2, d + 0.3);
+                        const ring = new THREE.Mesh(ringGeom, winMat);
+                        ring.position.set(0, fy, 0);
+                        building.add(ring);
+                    }
+
+                    // Rooftop Radio Mast & Pulsing Aviation Hazard Beacon
+                    const mast = new THREE.Mesh(spireGeom, darkBodyMat);
+                    mast.position.set(0, h + 6, 0);
+                    building.add(mast);
+
+                    const beacon = new THREE.Mesh(beaconSphereGeom, beaconMat);
+                    beacon.position.set(0, h + 12.2, 0);
+                    building.add(beacon);
+                    buildingBeacons.push(beacon);
+
+                } else if (archetype === 1) {
+                    // --- ARCHETYPE 1: CORPORATE HEXAGONAL MEGA-TOWER ---
+                    const radius = w * 0.55;
+                    const hexTower = new THREE.Mesh(hexCylGeom, bodyMat);
+                    hexTower.scale.set(radius, h, radius);
+                    hexTower.position.y = h / 2;
+                    building.add(hexTower);
+
+                    // Vertical neon accent stripes
+                    const stripeMat = (i % 2 === 0) ? cyanWindowMat : amberWindowMat;
+                    const stripeGeom = new THREE.BoxGeometry(0.6, h * 0.85, radius * 2.05);
+                    const stripe = new THREE.Mesh(stripeGeom, stripeMat);
+                    stripe.position.y = h / 2;
+                    building.add(stripe);
+
+                    // Rooftop perimeter halo ring
+                    const roofHaloGeom = new THREE.BoxGeometry(radius * 1.6, 1.4, radius * 1.6);
+                    const roofHalo = new THREE.Mesh(roofHaloGeom, magentaWindowMat);
+                    roofHalo.position.y = h + 0.7;
+                    building.add(roofHalo);
+
+                } else {
+                    // --- ARCHETYPE 2: ROOFTOP HELIPAD & HOLO-PANEL TOWER ---
+                    const monolith = new THREE.Mesh(boxGeom, bodyMat);
+                    monolith.scale.set(w, h, d);
+                    monolith.position.y = h / 2;
+                    building.add(monolith);
+
+                    // Neon floor bands
+                    const winMat = (i % 2 === 0) ? cyanWindowMat : amberWindowMat;
+                    const floors = 4;
+                    for (let f = 0; f < floors; f++) {
+                        const fy = (h / (floors + 1)) * (f + 1);
+                        const bandGeom = new THREE.BoxGeometry(w + 0.4, 0.9, d + 0.4);
+                        const band = new THREE.Mesh(bandGeom, winMat);
+                        band.position.set(0, fy, 0);
+                        building.add(band);
+                    }
+
+                    // Glowing Helipad circle on roof
+                    const helipad = new THREE.Mesh(helipadGeom, helipadMat);
+                    helipad.position.set(0, h + 0.15, 0);
+                    building.add(helipad);
                 }
 
                 building.position.set(bx, 0.1, bz);
@@ -1771,24 +2308,49 @@
         // Keyboard & Mouse inputs
         let mouseX = 0;
         let mouseY = 0;
-        let isMouseShaking = false;
         let mouseShakeTimer = 0;
+        let isMouseShaking = false;
+        let lastClientX = window.innerWidth / 2;
+        let lastClientY = window.innerHeight / 2;
 
+        // Smooth screen-relative flight stick controls (Pointer is ALWAYS VISIBLE, no trapped pointer lock!)
         document.addEventListener('mousemove', (e) => {
-            // Measure mouse movement speed (shake detector to break lock)
-            const speed = Math.sqrt((e.movementX || 0) ** 2 + (e.movementY || 0) ** 2);
-            if (speed > 16) {
+            const deltaMove = Math.hypot(e.clientX - lastClientX, e.clientY - lastClientY);
+            lastClientX = e.clientX;
+            lastClientY = e.clientY;
+            if (deltaMove > 25) {
                 isMouseShaking = true;
-                mouseShakeTimer = 22; // ~0.35s break-lock window
+                mouseShakeTimer = 15;
             }
 
-            // Normalize cursor: center screen is (0,0)
-            mouseX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
-            mouseY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+            const halfW = window.innerWidth / 2;
+            const halfH = window.innerHeight / 2;
+            let rawX = (e.clientX - halfW) / halfW;
+            let rawY = (e.clientY - halfH) / halfH;
             
-            // Mouse controls target Pitch and target Roll (Sharper angles for high G maneuvers)
+            // Subtle 5% deadzone around center for stable straight flight
+            const deadzone = 0.05;
+            if (Math.abs(rawX) < deadzone) rawX = 0;
+            else rawX = (rawX - Math.sign(rawX) * deadzone) / (1 - deadzone);
+            
+            if (Math.abs(rawY) < deadzone) rawY = 0;
+            else rawY = (rawY - Math.sign(rawY) * deadzone) / (1 - deadzone);
+            
+            mouseX = Math.max(-1, Math.min(1, rawX));
+            mouseY = Math.max(-1, Math.min(1, rawY));
+            
+            // Mouse controls target Pitch and target Roll
+            // UP IS UP, DOWN IS DOWN!
             jetState.targetRoll = -mouseX * Math.PI * 0.45; // allows 81 degree banking!
-            jetState.targetPitch = -mouseY * Math.PI * 0.28; // steeper pitch angles!
+            jetState.targetPitch = mouseY * Math.PI * 0.28;  // Up = climb, Down = dive!
+        });
+
+        // Gently level out flight if mouse leaves the browser window (e.g. user goes to tabs)
+        document.addEventListener('mouseleave', () => {
+            mouseX = 0;
+            mouseY = 0;
+            jetState.targetRoll = 0;
+            jetState.targetPitch = 0;
         });
 
         let isFiringNormal = false;
@@ -1914,7 +2476,7 @@
             mouseX = normX;
             mouseY = normY;
             jetState.targetRoll = -normX * Math.PI * 0.45;
-            jetState.targetPitch = -normY * Math.PI * 0.28;
+            jetState.targetPitch = normY * Math.PI * 0.28;
         }
 
         // Mobile Action Buttons Handlers
@@ -2069,6 +2631,7 @@
             missileMesh.damage = weapon.damage;
             missileMesh.targetId = targetPlayerId;
             missileMesh.targetModel = targetModelObj;
+            missileMesh.spawnTime = performance.now();
 
             scene.add(missileMesh);
             missiles.push(missileMesh);
@@ -2080,6 +2643,7 @@
             // Special Attack Blast Visual FX
             if (isSpecial) {
                 jetState.cameraShake = Math.min(jetState.cameraShake + 0.38, 0.65);
+                createSpecialSparkleEnergyModel(startPos);
                 
                 // Sci-Fi Plasma Shockwave Ring at launch point
                 const shockRingGeom = new THREE.RingGeometry(0.5, 4.8, 24);
@@ -2239,18 +2803,21 @@
             }
         }
 
-        // Heavy Cinematic Fiery Explosion (GTA-Style) on Jet Destruction
+        // Stylized Purple Sci-Fi Action Blast on Jet Destruction
         function createGTAExplosion(pos) {
+            // Trigger the 3D Stepped Action Spikes & Plasma Core
+            createSpecial3DExplosion(pos);
+
             // 1. Proximity-based camera shake rumble
             const dist = jet.position.distanceTo(pos);
             const shakeAmt = Math.max(0, 1.0 - (dist / 950)) * 0.72;
             jetState.cameraShake = Math.min(jetState.cameraShake + shakeAmt, 0.85);
 
-            // 2. Shockwave Expanding Ring (Torus alignment)
+            // 2. Shockwave Expanding Ring (Torus alignment in neon magenta)
             const ringGeom = new THREE.RingGeometry(1, 5, 24);
             ringGeom.rotateX(-Math.PI / 2);
             const ringMat = new THREE.MeshBasicMaterial({
-                color: 0xff4400,
+                color: 0xd946ef,
                 side: THREE.DoubleSide,
                 transparent: true,
                 opacity: 0.95,
@@ -2260,20 +2827,19 @@
             ring.position.copy(pos);
             scene.add(ring);
 
-            // 3. Fireball Cloud Spheres
+            // 3. Stylized Plasma Cloud Spheres (Neon Purple / Magenta / Cyan)
             const fireballs = [];
             const fireballCount = 7;
             const sphereGeom = new THREE.SphereGeometry(6, 16, 16);
             for (let i = 0; i < fireballCount; i++) {
-                const color = i === 0 ? 0xffffff : (i < 3 ? 0xffaa00 : 0xff2200);
+                const color = i === 0 ? 0xffffff : (i < 3 ? 0xc084fc : (i < 5 ? 0xd946ef : 0x38bdf8));
                 const mat = new THREE.MeshBasicMaterial({
                     color: color,
                     transparent: true,
-                    opacity: 0.95,
+                    opacity: 0.92,
                     blending: THREE.AdditiveBlending
                 });
                 const sphere = new THREE.Mesh(sphereGeom, mat);
-                // offset position slightly for organic shape
                 sphere.position.copy(pos).add(new THREE.Vector3(
                     (Math.random() - 0.5) * 12,
                     (Math.random() - 0.5) * 8 + 3,
@@ -2288,57 +2854,371 @@
                 });
             }
 
-            // 4. Parabolic Debris Sparks
-            const debris = [];
-            const debrisCount = 38;
-            const particleGeom = new THREE.BoxGeometry(1.2, 1.2, 1.2);
-            for (let i = 0; i < debrisCount; i++) {
-                const color = Math.random() > 0.45 ? 0xff5500 : 0xffaa00;
-                const mat = new THREE.MeshBasicMaterial({ color: color });
-                const mesh = new THREE.Mesh(particleGeom, mat);
-                mesh.position.copy(pos);
-                
-                // Blast outwards in all directions with a high upward velocity
-                const velocity = new THREE.Vector3(
-                    (Math.random() - 0.5) * 10,
-                    Math.random() * 7 + 3,
-                    (Math.random() - 0.5) * 10
-                );
-                
-                scene.add(mesh);
-                debris.push({
-                    mesh: mesh,
-                    velocity: velocity,
-                    life: 35 + Math.floor(Math.random() * 25)
-                });
-            }
-
-            // 5. Point Light Flash (Illuminates mountains/skyscrapers dynamically!)
+            // 4. Point Light Flash (Vivid violet)
             let flashLight = null;
             if (window.location.protocol !== 'file:') {
-                flashLight = new THREE.PointLight(0xff6600, 6.0, 450);
+                flashLight = new THREE.PointLight(0xc084fc, 7.5, 450);
                 flashLight.position.copy(pos).y += 4;
                 scene.add(flashLight);
             }
 
-            // Push to explosions list tracker
+            // Push to explosions list tracker (Clean action blast without cluttering sparkle debris)
             gtaExplosions.push({
                 ring: ring,
                 ringScale: 1.0,
                 fireballs: fireballs,
-                debris: debris,
                 light: flashLight,
                 life: 50
             });
         }
 
+        // --- 3D STYLIZED ACTION EXPLOSION (VIBRANT PURPLE / ANIME SCI-FI BLAST EFFECT) ---
+        // Inspired by the "Enhanced Action Explosion Effect part" action figure blast effect
+        const active3DExplosions = [];
+        function createSpecial3DExplosion(targetOrPos) {
+            if (!targetOrPos) return;
+
+            const isWorldPos = (targetOrPos instanceof THREE.Vector3) || (targetOrPos.x !== undefined && targetOrPos.isObject3D === undefined);
+            const parentModel = isWorldPos ? null : targetOrPos;
+            const spawnPos = isWorldPos ? new THREE.Vector3().copy(targetOrPos) : null;
+
+            const group = new THREE.Group();
+
+            // 1. Incandescent White-Lavender Core
+            const coreGeom = new THREE.IcosahedronGeometry(3.2, 1);
+            const coreMat = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.98,
+                blending: THREE.AdditiveBlending,
+                toneMapped: false
+            });
+            const core = new THREE.Mesh(coreGeom, coreMat);
+            group.add(core);
+
+            // 2. Glowing Violet/Magenta Plasma Aura
+            const haloGeom = new THREE.SphereGeometry(4.8, 16, 16);
+            const haloMat = new THREE.MeshBasicMaterial({
+                color: 0xc084fc,
+                transparent: true,
+                opacity: 0.72,
+                blending: THREE.AdditiveBlending,
+                toneMapped: false
+            });
+            const innerGlow = new THREE.Mesh(haloGeom, haloMat);
+            group.add(innerGlow);
+
+            // 3. Billowing Anime Plasma Cloud Lobes (volumetric bubble clusters at base)
+            const lobes = [];
+            const lobeGeom = new THREE.DodecahedronGeometry(2.4, 1);
+            const lobeColors = [0x9333ea, 0xa855f7, 0xd946ef, 0x7c3aed, 0xc084fc];
+            for (let b = 0; b < 10; b++) {
+                const lMat = new THREE.MeshStandardMaterial({
+                    color: lobeColors[b % lobeColors.length],
+                    emissive: lobeColors[b % lobeColors.length],
+                    emissiveIntensity: 1.4,
+                    roughness: 0.3,
+                    metalness: 0.2,
+                    flatShading: true,
+                    transparent: true,
+                    opacity: 0.92
+                });
+                const lobeMesh = new THREE.Mesh(lobeGeom, lMat);
+                const angle = (b / 10) * Math.PI * 2 + (Math.random() - 0.5) * 0.3;
+                const dist = 2.2 + Math.random() * 1.8;
+                const offset = new THREE.Vector3(Math.cos(angle) * dist, (Math.random() - 0.4) * 2.5, Math.sin(angle) * dist);
+                lobeMesh.position.copy(offset);
+                lobeMesh.scale.setScalar(0.2); // starts small for pop
+                group.add(lobeMesh);
+                lobes.push({
+                    mesh: lobeMesh,
+                    basePos: offset,
+                    targetScale: 0.9 + Math.random() * 0.45
+                });
+            }
+
+            // 4. Stepped / Ribbed Action Blast Spikes (Signature Anime Model Effect)
+            const shards = [];
+            const upVec = new THREE.Vector3(0, 1, 0);
+
+            // 20 stepped action spikes:
+            // - 2 Long Primary Thrust Spikes (dominant directional blast flare)
+            // - 18 Radiating Perimeter Action Spikes
+            for (let i = 0; i < 20; i++) {
+                let dir, length, radius, spikeColor;
+
+                if (i < 2) {
+                    // Elongated Primary Thrust Spikes
+                    const angle = i * Math.PI + (Math.random() - 0.5) * 0.5;
+                    dir = new THREE.Vector3(Math.cos(angle) * 0.8, 0.4 + (i === 0 ? 0.6 : -0.3), Math.sin(angle) * 0.8).normalize();
+                    length = 20.0 + Math.random() * 8.0;
+                    radius = 2.2 + Math.random() * 0.6;
+                    spikeColor = 0xf3e8ff; // Electric lavender white
+                } else if (i < 14) {
+                    // Secondary Radiating Spikes (Star pattern)
+                    const angle = ((i - 2) / 12) * Math.PI * 2 + (Math.random() - 0.5) * 0.35;
+                    const yBias = (Math.random() - 0.3) * 0.9;
+                    dir = new THREE.Vector3(Math.cos(angle), yBias, Math.sin(angle)).normalize();
+                    length = 10.0 + Math.random() * 7.0;
+                    radius = 1.3 + Math.random() * 0.6;
+                    spikeColor = (i % 2 === 0) ? 0xd946ef : 0x8b5cf6; // Neon magenta to violet
+                } else {
+                    // Basal Stepped Flared Spikes
+                    const angle = ((i - 14) / 6) * Math.PI * 2;
+                    dir = new THREE.Vector3(Math.cos(angle) * 0.95, -0.5 - Math.random() * 0.4, Math.sin(angle) * 0.95).normalize();
+                    length = 6.0 + Math.random() * 4.0;
+                    radius = 1.8 + Math.random() * 0.7;
+                    spikeColor = 0x6b21a8; // Deep royal purple
+                }
+
+                // Stepped 4-sided diamond profile for crisp anime faceted geometry
+                const spikeGroup = new THREE.Group();
+                const spikeMat = new THREE.MeshStandardMaterial({
+                    color: spikeColor,
+                    emissive: spikeColor,
+                    emissiveIntensity: 1.6,
+                    roughness: 0.2,
+                    metalness: 0.3,
+                    flatShading: true,
+                    transparent: true,
+                    opacity: 0.95
+                });
+
+                // Tier 1 (Base rib)
+                const g1 = new THREE.ConeGeometry(radius, length * 0.35, 4);
+                g1.translate(0, length * 0.175, 0);
+                const m1 = new THREE.Mesh(g1, spikeMat);
+                spikeGroup.add(m1);
+
+                // Tier 2 (Mid rib - slightly stepped in)
+                const g2 = new THREE.ConeGeometry(radius * 0.75, length * 0.45, 4);
+                g2.translate(0, length * 0.35 + length * 0.225, 0);
+                const m2 = new THREE.Mesh(g2, spikeMat);
+                spikeGroup.add(m2);
+
+                // Tier 3 (Sharp tip)
+                const g3 = new THREE.ConeGeometry(radius * 0.45, length * 0.3, 4);
+                g3.translate(0, length * 0.8 + length * 0.15, 0);
+                const m3 = new THREE.Mesh(g3, spikeMat);
+                spikeGroup.add(m3);
+
+                spikeGroup.quaternion.setFromUnitVectors(upVec, dir);
+                spikeGroup.scale.set(0.08, 0.08, 0.08); // collapsed initially for explosive pop
+                group.add(spikeGroup);
+
+                shards.push({
+                    mesh: spikeGroup,
+                    dir: dir,
+                    maxScaleX: 1.0 + Math.random() * 0.3,
+                    maxScaleY: 1.3 + Math.random() * 0.4,
+                    travelDist: 3.5 + Math.random() * 5.0,
+                    rotAxis: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize(),
+                    rotSpeed: (Math.random() - 0.5) * 0.04
+                });
+            }
+
+            // 5. Concentric Slicing Shockwave Rings (Torus in Neon Purple & Cyan)
+            const ringGeom1 = new THREE.TorusGeometry(3.5, 0.28, 8, 32);
+            const ringMat1 = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.95, toneMapped: false });
+            const shockRing1 = new THREE.Mesh(ringGeom1, ringMat1);
+            shockRing1.rotation.x = Math.PI / 2;
+            group.add(shockRing1);
+
+            const ringGeom2 = new THREE.TorusGeometry(4.2, 0.32, 8, 32);
+            const ringMat2 = new THREE.MeshBasicMaterial({ color: 0xd946ef, transparent: true, opacity: 0.9, toneMapped: false });
+            const shockRing2 = new THREE.Mesh(ringGeom2, ringMat2);
+            shockRing2.rotation.x = Math.PI / 2.3;
+            shockRing2.rotation.z = Math.PI / 5;
+            group.add(shockRing2);
+
+            // 6. High-intensity Violet Point Light
+            const flashLight = new THREE.PointLight(0xc084fc, 8.0, 75);
+            group.add(flashLight);
+
+            if (parentModel) {
+                parentModel.add(group);
+            } else if (spawnPos) {
+                group.position.copy(spawnPos);
+                scene.add(group);
+            }
+
+            // Proximity camera rumble
+            const effectPos = parentModel ? parentModel.position : spawnPos;
+            const distToPlayer = effectPos ? jet.position.distanceTo(effectPos) : 300;
+            const shake = Math.max(0.15, 1.0 - (distToPlayer / 700)) * 0.85;
+            jetState.cameraShake = Math.min(jetState.cameraShake + shake, 0.95);
+
+            // Active Jet Death Action Blast (Clean without lingering micro-splinters or debris)
+            active3DExplosions.push({
+                group: group,
+                parentModel: parentModel,
+                isWorld: !parentModel,
+                core: core,
+                innerGlow: innerGlow,
+                lobes: lobes,
+                shockRing1: shockRing1,
+                shockRing2: shockRing2,
+                flashLight: flashLight,
+                shards: shards,
+                startTime: performance.now(),
+                duration: 2000 // 2 seconds
+            });
+        }
+
+        // --- 3D PURPLE SPARKLE ENERGY MODEL (FOR SPECIAL ATTACK) ---
+        // Shimmering radiant crystal star-burst model with glistening diamond sparkles & violet prisms
+        const activeSpecialSparkles = [];
+        function createSpecialSparkleEnergyModel(targetOrPos) {
+            if (!targetOrPos) return;
+
+            const isWorldPos = (targetOrPos instanceof THREE.Vector3) || (targetOrPos.x !== undefined && targetOrPos.isObject3D === undefined);
+            const parentModel = isWorldPos ? null : targetOrPos;
+            const spawnPos = isWorldPos ? new THREE.Vector3().copy(targetOrPos) : null;
+
+            const group = new THREE.Group();
+
+            // 1. Central Pulsating Diamond Energy Core
+            const coreGeom = new THREE.OctahedronGeometry(2.4, 0);
+            const coreMat = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.96,
+                blending: THREE.AdditiveBlending,
+                toneMapped: false
+            });
+            const core = new THREE.Mesh(coreGeom, coreMat);
+            group.add(core);
+
+            // 2. Radiant Violet Energy Aura Sphere
+            const auraGeom = new THREE.SphereGeometry(3.8, 16, 16);
+            const auraMat = new THREE.MeshBasicMaterial({
+                color: 0xc084fc,
+                transparent: true,
+                opacity: 0.70,
+                blending: THREE.AdditiveBlending,
+                toneMapped: false
+            });
+            const aura = new THREE.Mesh(auraGeom, auraMat);
+            group.add(aura);
+
+            // 3. Shimmering 4-Point & 8-Point Diamond Stars (Crystal Sparkles)
+            const stars = [];
+            const starGeom = new THREE.OctahedronGeometry(1.0, 0);
+            const sparkleColors = [0xff00ff, 0xd946ef, 0xc084fc, 0x38bdf8, 0xffffff, 0xa855f7];
+
+            for (let s = 0; s < 22; s++) {
+                const sMat = new THREE.MeshBasicMaterial({
+                    color: sparkleColors[s % sparkleColors.length],
+                    transparent: true,
+                    opacity: 0.95,
+                    blending: THREE.AdditiveBlending,
+                    toneMapped: false
+                });
+                const star = new THREE.Mesh(starGeom, sMat);
+                
+                // Sharp non-uniform scaling to form an elongated, brilliant diamond star cross
+                const scaleX = 0.25 + Math.random() * 0.35;
+                const scaleY = 1.8 + Math.random() * 2.2;
+                const scaleZ = 0.25 + Math.random() * 0.35;
+                star.scale.set(scaleX, scaleY, scaleZ);
+
+                const angle = (s / 22) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
+                const radius = 2.0 + Math.random() * 3.5;
+                const height = (Math.random() - 0.5) * 4.5;
+                star.position.set(Math.cos(angle) * radius, height, Math.sin(angle) * radius);
+                star.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+                group.add(star);
+
+                const vel = new THREE.Vector3(Math.cos(angle), (Math.random() - 0.5) * 0.8, Math.sin(angle)).normalize().multiplyScalar(0.12 + Math.random() * 0.22);
+                stars.push({
+                    mesh: star,
+                    velocity: vel,
+                    baseScale: 1.0,
+                    spinSpeed: (Math.random() - 0.5) * 0.12,
+                    offset: Math.random() * Math.PI * 2
+                });
+            }
+
+            // 4. Orbiting Crystalline Diamond Prisms
+            const prisms = [];
+            const prismGeom = new THREE.OctahedronGeometry(0.8, 0);
+            for (let p = 0; p < 8; p++) {
+                const pMat = new THREE.MeshBasicMaterial({
+                    color: 0x00ffff,
+                    transparent: true,
+                    opacity: 0.9,
+                    blending: THREE.AdditiveBlending,
+                    toneMapped: false
+                });
+                const prism = new THREE.Mesh(prismGeom, pMat);
+                group.add(prism);
+                prisms.push({
+                    mesh: prism,
+                    angle: (p / 8) * Math.PI * 2,
+                    radius: 3.5 + (p % 2) * 1.5,
+                    orbitSpeed: 0.05 + (p % 2) * 0.02
+                });
+            }
+
+            // 5. Radiant Twinkling Starlight Ring
+            const starlightRingGeom = new THREE.RingGeometry(2.5, 3.8, 24);
+            starlightRingGeom.rotateX(-Math.PI / 2);
+            const starlightRingMat = new THREE.MeshBasicMaterial({
+                color: 0xd946ef,
+                transparent: true,
+                opacity: 0.85,
+                blending: THREE.AdditiveBlending,
+                side: THREE.DoubleSide,
+                toneMapped: false
+            });
+            const starlightRing = new THREE.Mesh(starlightRingGeom, starlightRingMat);
+            group.add(starlightRing);
+
+            // 6. Radiant Violet Point Light
+            const flashLight = new THREE.PointLight(0xe879f9, 7.0, 90);
+            group.add(flashLight);
+
+            if (parentModel) {
+                parentModel.add(group);
+            } else if (spawnPos) {
+                group.position.copy(spawnPos);
+                scene.add(group);
+            }
+
+            activeSpecialSparkles.push({
+                group: group,
+                parentModel: parentModel,
+                core: core,
+                aura: aura,
+                stars: stars,
+                prisms: prisms,
+                starlightRing: starlightRing,
+                light: flashLight,
+                startTime: performance.now(),
+                duration: 1800 // 1.8 seconds sparkling model display
+            });
+        }
+
         // Update active projectiles & check hits locally
         function checkMissileCollisions() {
+            const now = performance.now();
             for (let i = missiles.length - 1; i >= 0; i--) {
                 const missile = missiles[i];
+                const missileAge = now - (missile.spawnTime || now);
 
-                // --- HOMING BULLET STEERING LOGIC (space.io style tracking) ---
-                if (missile.targetModel || missile.targetId) {
+                // 1. HARD LIFETIME LIMIT: All projectiles vanish after 18 seconds (<= 20 seconds)
+                if (missileAge > 18000) {
+                    scene.remove(missile);
+                    missiles.splice(i, 1);
+                    continue;
+                }
+
+                // 2. HOMING CUTOFF: Missiles track target only during initial window (3.5s vulcan, 5.0s special)
+                // Prevents missiles from endlessly stalking the player if dodged!
+                const maxHomingTime = missile.isSpecial ? 5000 : 3500;
+                const canHome = missileAge < maxHomingTime;
+
+                if (canHome && (missile.targetModel || missile.targetId)) {
                     let targetObj = missile.targetModel;
                     if (!targetObj && missile.targetId) {
                         const other = otherPlayers.get(missile.targetId);
@@ -2357,7 +3237,6 @@
                             const dot = currentDir.dot(toTarget);
 
                             // Homing curve: steer toward target if in front arc (dot > 0.1)
-                            // If enemy jet makes sharp maneuvers or boosts away, dot drops -> bullet misses!
                             if (dot > 0.1) {
                                 const targetQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), toTarget);
                                 const turnRate = missile.isSpecial ? 0.14 : 0.085;
@@ -2417,6 +3296,11 @@
                             
                             // Trigger local screen hitmarker feedback
                             triggerHitmarker();
+
+                            // Show 3D Purple Sparkle Energy Model enveloping the hit enemy jet
+                            if (missile.isSpecial && otherPlayer && otherPlayer.model) {
+                                createSpecialSparkleEnergyModel(otherPlayer.model);
+                            }
                             
                             // Send hit to server (if online) or process offline damage directly
                             if (ws && ws.readyState === WebSocket.OPEN) {
@@ -2448,12 +3332,21 @@
                             let currentHealth = parseInt(healthElement.textContent) || 100;
                             currentHealth = Math.max(0, currentHealth - missile.damage);
                             healthElement.textContent = currentHealth;
+
+                            // Interrupt regeneration immediately and reset the 5-second peace cooldown
+                            playerRegenState.lastDamageTime = performance.now();
+                            playerRegenState.isRegenerating = false;
+                            playerRegenState.accumulated = 0;
+                            updateRegenHud(false);
                             
                             // Visual feedback
                             const val = document.getElementById('health-value');
                             val.style.color = '#ff3333';
                             setTimeout(() => { val.style.color = '#00ffcc'; }, 300);
                             flashJetRed(jet);
+                            if (missile.isSpecial) {
+                                createSpecialSparkleEnergyModel(jet);
+                            }
                             
                             // Camera shake recoil
                             jetState.cameraShake = Math.min(jetState.cameraShake + 0.25, 0.5);
@@ -2466,6 +3359,77 @@
                             missiles.splice(i, 1);
                         }
                     }
+                }
+            }
+        }
+
+        // --- PLAYER HEALTH & SHIELD REGENERATION SYSTEM ---
+        const playerRegenState = {
+            lastDamageTime: 0,
+            delay: 5000,         // 5 seconds peace delay before repair kicks in
+            ratePerSecond: 9,    // +9 HP per second (reduced by 25%)
+            accumulated: 0,
+            isRegenerating: false
+        };
+
+        function updateRegenHud(active) {
+            const badge = document.getElementById('regen-badge');
+            if (badge) {
+                badge.style.display = active ? 'inline-block' : 'none';
+            }
+            if (typeof jetShieldAura !== 'undefined' && jetShieldAura) {
+                jetShieldAura.visible = active;
+            }
+        }
+
+        function updatePlayerRegeneration(deltaMs) {
+            const healthElem = document.getElementById('health');
+            if (!healthElem) return;
+            let currentHealth = parseFloat(healthElem.textContent) || 0;
+
+            // Cannot regenerate if dead or already at maximum health
+            if (currentHealth <= 0 || currentHealth >= 100) {
+                if (playerRegenState.isRegenerating) {
+                    playerRegenState.isRegenerating = false;
+                    updateRegenHud(false);
+                }
+                return;
+            }
+
+            const timeSinceHit = performance.now() - playerRegenState.lastDamageTime;
+            if (timeSinceHit >= playerRegenState.delay) {
+                if (!playerRegenState.isRegenerating) {
+                    playerRegenState.isRegenerating = true;
+                    updateRegenHud(true);
+                }
+
+                // Smoothly accumulate HP
+                playerRegenState.accumulated += playerRegenState.ratePerSecond * (deltaMs / 1000);
+                if (playerRegenState.accumulated >= 1) {
+                    const addHp = Math.floor(playerRegenState.accumulated);
+                    playerRegenState.accumulated -= addHp;
+                    currentHealth = Math.min(100, currentHealth + addHp);
+                    healthElem.textContent = Math.round(currentHealth);
+
+                    // Green glow feedback on health value
+                    const val = document.getElementById('health-value');
+                    if (val) {
+                        val.style.color = '#00ffaa';
+                        val.style.textShadow = '0 0 10px rgba(0, 255, 170, 0.8)';
+                    }
+
+                    // Sync to multiplayer server if online
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({
+                            type: 'update',
+                            health: Math.round(currentHealth)
+                        }));
+                    }
+                }
+            } else {
+                if (playerRegenState.isRegenerating) {
+                    playerRegenState.isRegenerating = false;
+                    updateRegenHud(false);
                 }
             }
         }
@@ -2495,18 +3459,6 @@
                 });
                 
                 // Spawn the offline AI bots
-                setTimeout(spawnOfflineBots, 500);
-                return;
-            }
-
-            // Check if running locally as a file (offline fallback)
-            if (window.location.protocol === 'file:') {
-                console.warn('⚠️ Running locally as a file. Multiplayer WebSocket is disabled.');
-                playerId = 'offline_player_' + Math.random().toString(36).substr(2, 5);
-                playerScores.set(playerId, {
-                    username: getUsername(),
-                    score: 0
-                });
                 setTimeout(spawnOfflineBots, 500);
                 return;
             }
@@ -2641,6 +3593,7 @@
             bullet.speed = isSpecial ? jetState.weapons.special.speed : jetState.weapons.missile.speed;
             bullet.damage = isSpecial ? jetState.weapons.special.damage : jetState.weapons.missile.damage;
             bullet.targetId = data.targetId; // Sync homing target ID
+            bullet.spawnTime = performance.now();
             
             scene.add(bullet);
             missiles.push(bullet);
@@ -2652,6 +3605,12 @@
             if (data.targetId === playerId) {
                 const healthElement = document.getElementById('health');
                 healthElement.textContent = data.newHealth;
+
+                // Interrupt regeneration immediately and reset the 5-second peace cooldown
+                playerRegenState.lastDamageTime = performance.now();
+                playerRegenState.isRegenerating = false;
+                playerRegenState.accumulated = 0;
+                updateRegenHud(false);
                 
                 // Red flash HUD feedback
                 const val = document.getElementById('health-value');
@@ -2687,6 +3646,12 @@
                 } else {
                     createExplosion(targetPos, data.isSpecial ? 0xff00ff : 0xff3300);
                 }
+            }
+
+            // Show 3D Special Sparkle Energy Model on hit jet for 1.8 seconds
+            if (data.isSpecial) {
+                const targetJetModel = (data.targetId === playerId) ? jet : (otherPlayers.get(data.targetId)?.model);
+                if (targetJetModel) createSpecialSparkleEnergyModel(targetJetModel);
             }
 
             // Sync scores
@@ -2760,6 +3725,71 @@
 
         function respawnPlayer() {
             document.getElementById('deathScreen').classList.remove('active');
+
+            // 1. Reset player health to 100%
+            document.getElementById('health').textContent = '100';
+            const val = document.getElementById('health-value');
+            if (val) {
+                val.style.color = '#00ffcc';
+                val.style.textShadow = 'none';
+            }
+
+            // 2. Reset player flight position & attitude to runway
+            jet.position.set(0, 0.5, 0);
+            jet.quaternion.set(0, 0, 0, 1);
+            jetState.currentSpeed = 0;
+            jetState.isAirborne = false;
+            jetState.pitch = 0;
+            jetState.yaw = 0;
+            jetState.roll = 0;
+            jetState.targetPitch = 0;
+            jetState.targetRoll = 0;
+            mouseX = 0;
+            mouseY = 0;
+
+            // 3. Reset regeneration state
+            playerRegenState.lastDamageTime = performance.now();
+            playerRegenState.isRegenerating = false;
+            playerRegenState.accumulated = 0;
+            updateRegenHud(false);
+
+            // 4. Start fresh safe takeoff grace period cooldown (6s)
+            gameStartTime = performance.now();
+
+            // 5. Relocate bots safely far away (> 1000 units) from runway
+            relocateBotsFarFromPlayer();
+
+            // 6. Broadcast respawn to server if online
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'playerRespawn',
+                    id: playerId
+                }));
+            }
+        }
+
+        // Relocate all bots far away (> 1000 units) from player so they do not spawn-camp runway
+        function relocateBotsFarFromPlayer() {
+            bots.forEach(bot => {
+                let bx, bz;
+                do {
+                    bx = (Math.random() - 0.5) * 1600;
+                    bz = (Math.random() - 0.5) * 3000;
+                } while (Math.hypot(bx - (jet ? jet.position.x : 0), bz - (jet ? jet.position.z : 0)) < 1000);
+
+                bot.model.position.set(bx, 100 + Math.random() * 160, bz);
+                bot.data.position.x = bx;
+                bot.data.position.y = bot.model.position.y;
+                bot.data.position.z = bz;
+                bot.aiDestination.set(
+                    (Math.random() - 0.5) * 1600,
+                    80 + Math.random() * 200,
+                    (Math.random() - 0.5) * 3000
+                );
+                bot.isCharging = false;
+                bot.chargeStartTime = 0;
+                bot.breakEndTime = performance.now() + 1000;
+            });
         }
 
         // Leaderboard logic
@@ -2815,8 +3845,10 @@
         }
 
         // --- OFFLINE SINGLE PLAYER BOT AI SYSTEM ---
-        const botNames = ['BOT_VIPER', 'BOT_MAVERICK', 'BOT_RAPTOR', 'BOT_GHOST', 'BOT_RAVEN'];
+        // --- OFFLINE SINGLE PLAYER BOT AI SYSTEM ---
+        const botNames = ['BOT_VIPER', 'BOT_MAVERICK', 'BOT_RAPTOR', 'BOT_GHOST'];
         const bots = [];
+        const botGracePeriodDuration = 6000; // 6-second safe takeoff grace window
 
         function spawnOfflineBots() {
             botNames.forEach((name, index) => {
@@ -2826,10 +3858,14 @@
                 const botJet = createProceduralJet(true); // isEnemy = true
                 botJet.scale.set(1.42, 1.42, 1.42);
                 
-                // Random position
-                const bx = (Math.random() - 0.5) * 1200;
-                const by = 80 + Math.random() * 180;
-                const bz = (Math.random() - 0.5) * 2400;
+                // Spawn safely far from player's current position (> 1000 units)
+                let bx, bz;
+                do {
+                    bx = (Math.random() - 0.5) * 1600;
+                    bz = (Math.random() - 0.5) * 3000;
+                } while (Math.hypot(bx - (jet ? jet.position.x : 0), bz - (jet ? jet.position.z : 0)) < 1000);
+
+                const by = 95 + Math.random() * 180;
                 botJet.position.set(bx, by, bz);
                 botJet.rotation.y = Math.random() * Math.PI * 2;
                 
@@ -2849,11 +3885,11 @@
                 label.style.fontFamily = "'Courier New', monospace";
                 document.body.appendChild(label);
                 
-                // Initial data structure matching other player details
+                // Initial data structure matching other player details (125 Base Health)
                 const botData = {
                     id: botId,
                     username: name,
-                    health: 100,
+                    health: 125,
                     score: 0,
                     position: { x: bx, y: by, z: bz },
                     quaternion: { x: botJet.quaternion.x, y: botJet.quaternion.y, z: botJet.quaternion.z, w: botJet.quaternion.w }
@@ -2866,10 +3902,16 @@
                     model: botJet,
                     label: label,
                     data: botData,
-                    aiDestination: new THREE.Vector3((Math.random() - 0.5) * 1600, 50 + Math.random() * 200, (Math.random() - 0.5) * 3000),
-                    speed: 1.2 + Math.random() * 0.8,
+                    aiDestination: new THREE.Vector3((Math.random() - 0.5) * 1600, 70 + Math.random() * 200, (Math.random() - 0.5) * 3000),
+                    speed: 1.5 + Math.random() * 0.4,
                     lastFired: 0,
-                    isBot: true // Flag to skip network lerping in animate loop
+                    isBot: true,
+                    // Dynamic Attack Coordinator state
+                    isCharging: false,
+                    chargeStartTime: 0,
+                    breakEndTime: 0,
+                    attackDuration: 7500 + Math.random() * 2500,
+                    currentRoll: 0
                 };
                 
                 otherPlayers.set(botId, botObj);
@@ -2883,99 +3925,173 @@
             const gameMode = localStorage.getItem('gameMode') || 'multi';
             if (gameMode !== 'single') return;
 
+            const elapsedGameTime = performance.now() - gameStartTime;
+            const inGracePeriod = elapsedGameTime < botGracePeriodDuration;
+
+            // Update HUD safe takeoff grace period banner
+            const graceBanner = document.getElementById('grace-period-banner');
+            const graceTimer = document.getElementById('grace-timer');
+            if (graceBanner && graceTimer) {
+                if (inGracePeriod) {
+                    graceBanner.style.display = 'flex';
+                    const remainingSec = Math.ceil((botGracePeriodDuration - elapsedGameTime) / 1000);
+                    graceTimer.textContent = remainingSec;
+                } else {
+                    graceBanner.style.display = 'none';
+                }
+            }
+
+            const now = performance.now();
+            const isPlayerDead = parseInt(document.getElementById('health').textContent) <= 0;
+            const playerScore = (playerScores.get(playerId) && playerScores.get(playerId).score) || 0;
+
+            // Determine maximum charging jets allowed (Stepped, non-steady difficulty):
+            // - Immediate challenge: 2 jets charge right from the start (2v1 dogfight, 2 flanking)
+            // - Scaling challenge (Score >= 80): Up to 3 jets charge simultaneously (high-stakes dogfight)
+            // - STRICT CAP: NEVER exceed 3 charging jets at once!
+            let maxChargingBots = 2;
+            if (playerScore >= 80) {
+                maxChargingBots = 3;
+            }
+
+            // Progressive bot combat scaling with player score (challenging & responsive)
+            const botFireCooldown = Math.max(240, 360 - Math.floor(playerScore * 0.25));
+            const botTurnRate = 0.062 + Math.min(0.018, playerScore * 0.000035);
+            const speedBonus = Math.min(0.65, playerScore * 0.0012);
+
+            // Count current charging bots and check duration / overshoot
+            let currentChargingCount = 0;
+            bots.forEach(bot => {
+                if (bot.data.health <= 0) {
+                    bot.isCharging = false;
+                    return;
+                }
+                if (bot.isCharging) {
+                    const chargeTime = now - (bot.chargeStartTime || 0);
+                    const distToPlayer = bot.model.position.distanceTo(jet.position);
+                    const toPlayer = new THREE.Vector3().subVectors(jet.position, bot.model.position);
+                    const botForward = new THREE.Vector3(0, 0, 1).applyQuaternion(bot.model.quaternion);
+                    const hasOvershot = distToPlayer < 70 && botForward.dot(toPlayer) < 0;
+
+                    if (chargeTime > (bot.attackDuration || 7500) || hasOvershot || isPlayerDead || inGracePeriod) {
+                        bot.isCharging = false;
+                        bot.breakEndTime = now + 1500 + Math.random() * 1500; // 1.5s to 3s fast tactical break
+                        const angle = Math.random() * Math.PI * 2;
+                        const dist = 420 + Math.random() * 200;
+                        bot.aiDestination.set(
+                            jet.position.x + Math.cos(angle) * dist,
+                            80 + Math.random() * 180,
+                            jet.position.z + Math.sin(angle) * dist
+                        );
+                    } else {
+                        currentChargingCount++;
+                    }
+                }
+            });
+
+            // Assign charging tokens to available bots if under limit
+            if (!isPlayerDead && !inGracePeriod && currentChargingCount < maxChargingBots) {
+                const candidates = bots.filter(b => b.data.health > 0 && !b.isCharging && now > (b.breakEndTime || 0));
+                candidates.sort((a, b) => a.model.position.distanceTo(jet.position) - b.model.position.distanceTo(jet.position));
+
+                for (let c = 0; c < candidates.length && currentChargingCount < maxChargingBots; c++) {
+                    const chosen = candidates[c];
+                    chosen.isCharging = true;
+                    chosen.chargeStartTime = now;
+                    chosen.attackDuration = 7000 + Math.random() * 3000; // 7s to 10s attack run
+                    currentChargingCount++;
+                }
+            }
+
             bots.forEach(bot => {
                 if (bot.data.health <= 0) return; // skip dead bots
 
                 const botJet = bot.model;
                 const toTarget = new THREE.Vector3();
-                
-                // Decide whether to patrol or chase player
                 const distToPlayer = botJet.position.distanceTo(jet.position);
-                const isPlayerDead = parseInt(document.getElementById('health').textContent) <= 0;
-                
-                if (distToPlayer < 750 && !isPlayerDead) {
-                    // Chase mode (Aggressive pursuit)
+
+                if (bot.isCharging && !isPlayerDead && !inGracePeriod) {
+                    // --- CHARGE ATTACK MODE ---
                     toTarget.copy(jet.position).sub(botJet.position);
-                    
-                    // Throttle controller (Slow down if close to player, speed up if far or behind)
-                    if (distToPlayer < 180) {
-                        bot.speed = THREE.MathUtils.lerp(bot.speed, 1.1, 0.05); // brake to stay behind and lock target
-                    } else if (distToPlayer > 400) {
-                        bot.speed = THREE.MathUtils.lerp(bot.speed, 3.2, 0.04); // apply "afterburner boost" to close distance
+
+                    // Dynamic throttle based on range (fast intercept, dogfight combat, near brake)
+                    if (distToPlayer < 160) {
+                        bot.speed = THREE.MathUtils.lerp(bot.speed, 1.5 + speedBonus * 0.5, 0.06); // brake
+                    } else if (distToPlayer > 350) {
+                        bot.speed = THREE.MathUtils.lerp(bot.speed, 3.4 + speedBonus, 0.06); // high-speed intercept
                     } else {
-                        bot.speed = THREE.MathUtils.lerp(bot.speed, 2.1, 0.05); // standard chase speed
+                        bot.speed = THREE.MathUtils.lerp(bot.speed, 2.4 + speedBonus, 0.06); // combat dogfight speed
                     }
 
-                    // Bot active shooting: sprays every 450ms when pointing generally at player
-                    const now = performance.now();
-                    if (distToPlayer < 450 && (now - bot.lastFired > 450)) {
+                    // Bot active shooting when nose aligns with player (faster cooldown, wider combat cone)
+                    if (distToPlayer < 540 && (now - bot.lastFired > botFireCooldown)) {
                         const botForward = new THREE.Vector3(0, 0, 1).applyQuaternion(botJet.quaternion);
                         const toPlayerNorm = new THREE.Vector3().copy(toTarget).normalize();
                         const dot = botForward.dot(toPlayerNorm);
-                        if (dot > 0.86) { // pointing generally at player
+                        if (dot > 0.76) {
                             bot.lastFired = now;
                             fireBotMissile(bot);
                         }
                     }
                 } else {
-                    // Patrol mode
-                    const distToPatrol = botJet.position.distanceTo(bot.aiDestination);
-                    if (distToPatrol < 120) {
-                        // pick new random destination in sky
-                        bot.aiDestination.set(
-                            (Math.random() - 0.5) * 1600,
-                            80 + Math.random() * 220,
-                            (Math.random() - 0.5) * 3000
-                        );
+                    // --- STANDOFF PERIMETER PATROL / FLANKING MODE ---
+                    // If getting too close to player (< 350 units), gently steer away to maintain perimeter
+                    if (distToPlayer < 350) {
+                        toTarget.copy(botJet.position).sub(jet.position).setY(0).normalize().multiplyScalar(450);
+                        toTarget.add(botJet.position);
+                        bot.aiDestination.copy(toTarget);
+                    } else {
+                        const distToPatrol = botJet.position.distanceTo(bot.aiDestination);
+                        if (distToPatrol < 120) {
+                            const angle = Math.random() * Math.PI * 2;
+                            const dist = 500 + Math.random() * 250;
+                            bot.aiDestination.set(
+                                jet.position.x + Math.cos(angle) * dist,
+                                75 + Math.random() * 200,
+                                jet.position.z + Math.sin(angle) * dist
+                            );
+                        }
+                        toTarget.copy(bot.aiDestination).sub(botJet.position);
                     }
-                    toTarget.copy(bot.aiDestination).sub(botJet.position);
-                    bot.speed = THREE.MathUtils.lerp(bot.speed, 1.4, 0.05); // cruise speed during patrol
+                    bot.speed = THREE.MathUtils.lerp(bot.speed, 1.35, 0.05); // cruise speed during patrol
                 }
-                
-                // Steering & Banking calculations (simulate human pilot roll-and-turn)
+
+                // Steering & Banking calculations (simulate pilot banking turn)
                 if (toTarget.lengthSq() > 0.01) {
                     toTarget.normalize();
-                    
-                    // Base target heading quaternion
                     const targetQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), toTarget);
-                    
-                    // Smoothly steer heading (high turn rate of 0.065 matches expert human responses)
-                    botJet.quaternion.slerp(targetQuat, 0.065);
-                    
-                    // Bank (roll) proportional to turning intensity
+                    botJet.quaternion.slerp(targetQuat, botTurnRate);
+
                     const right = new THREE.Vector3(1, 0, 0).applyQuaternion(botJet.quaternion);
-                    const turnSign = right.dot(toTarget); // positive turning right, negative turning left
-                    
-                    const targetRoll = -turnSign * Math.PI * 0.4; // Bank up to 72 degrees for high-G banking turns!
+                    const turnSign = right.dot(toTarget);
+                    const targetRoll = -turnSign * Math.PI * 0.4;
                     bot.currentRoll = THREE.MathUtils.lerp(bot.currentRoll || 0, targetRoll, 0.12);
-                    
-                    // Apply roll on top of steering quaternion
+
                     const rollQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), bot.currentRoll);
                     botJet.quaternion.multiply(rollQuat);
                 }
-                
-                // Move bot forward
+
+                // Forward movement
                 const forward = new THREE.Vector3(0, 0, bot.speed);
                 forward.applyQuaternion(botJet.quaternion);
                 botJet.position.add(forward);
-                
-                // Enforce altitude bounds
-                if (botJet.position.y < 12) botJet.position.y = 12;
+
+                // Altitude bounds
+                if (botJet.position.y < 15) botJet.position.y = 15;
                 if (botJet.position.y > 450) botJet.position.y = 450;
-                
-                // Keep inside map bounds
+
+                // Map bounds
                 const limitX = jetState.mapWidth / 2 - 30;
                 const limitZ = jetState.mapLength / 2 - 30;
                 if (Math.abs(botJet.position.x) > limitX) {
                     botJet.position.x = Math.sign(botJet.position.x) * limitX;
-                    bot.aiDestination.x *= -0.5; // steer away
+                    bot.aiDestination.x *= -0.5;
                 }
                 if (Math.abs(botJet.position.z) > limitZ) {
                     botJet.position.z = Math.sign(botJet.position.z) * limitZ;
-                    bot.aiDestination.z *= -0.5; // steer away
+                    bot.aiDestination.z *= -0.5;
                 }
-                
-                // Update internal position data for label alignment
+
                 bot.data.position.x = botJet.position.x;
                 bot.data.position.y = botJet.position.y;
                 bot.data.position.z = botJet.position.z;
@@ -2993,17 +4109,21 @@
             bullet.position.copy(startPos);
             bullet.quaternion.copy(bot.model.quaternion);
             
-            // Firing spread for bots (simulates slight spray inaccuracy)
-            const spreadX = (Math.random() - 0.5) * 0.035;
-            const spreadY = (Math.random() - 0.5) * 0.035;
-            const spreadZ = (Math.random() - 0.5) * 0.035;
+            // Firing spread for bots (tightens as player score rises)
+            const playerScore = (playerScores.get(playerId) && playerScores.get(playerId).score) || 0;
+            const spreadFactor = Math.max(0.006, 0.016 - playerScore * 0.00002);
+            const spreadX = (Math.random() - 0.5) * spreadFactor;
+            const spreadY = (Math.random() - 0.5) * spreadFactor;
+            const spreadZ = (Math.random() - 0.5) * spreadFactor;
             const spreadQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(spreadX, spreadY, spreadZ));
             bullet.quaternion.multiply(spreadQuat);
             
             bullet.ownerId = bot.id;
             bullet.isSpecial = false;
-            bullet.speed = jetState.weapons.missile.speed;
-            bullet.damage = jetState.weapons.missile.damage;
+            // Bot missile speed & damage scaled for dogfight challenge
+            bullet.speed = Math.min(10.5, 9.2 + playerScore * 0.002);
+            bullet.damage = Math.min(32, 22 + Math.floor(playerScore * 0.018));
+            bullet.spawnTime = performance.now();
             
             scene.add(bullet);
             missiles.push(bullet);
@@ -3035,17 +4155,26 @@
                     bot.model.visible = false;
                     bot.label.style.display = 'none';
                     
-                    // Respawn bot after 3 seconds
+                    // Respawn bot safely far away (> 1000 units) from player after 2.2 seconds with score-scaled health
                     setTimeout(() => {
-                        bot.data.health = 100;
+                        const currentScore = (playerScores.get(playerId) && playerScores.get(playerId).score) || 0;
+                        const scaledMaxHealth = Math.min(185, 125 + Math.floor(currentScore * 0.12));
+                        bot.data.health = scaledMaxHealth;
+                        bot.maxHealth = scaledMaxHealth;
                         bot.model.visible = true;
                         bot.label.style.display = 'block';
-                        bot.model.position.set(
-                            (Math.random() - 0.5) * 1200,
-                            80 + Math.random() * 180,
-                            (Math.random() - 0.5) * 2400
-                        );
-                    }, 3000);
+                        
+                        let rbx, rbz;
+                        do {
+                            rbx = (Math.random() - 0.5) * 1600;
+                            rbz = (Math.random() - 0.5) * 3000;
+                        } while (Math.hypot(rbx - (jet ? jet.position.x : 0), rbz - (jet ? jet.position.z : 0)) < 1000);
+
+                        bot.model.position.set(rbx, 90 + Math.random() * 180, rbz);
+                        bot.isCharging = false;
+                        bot.chargeStartTime = 0;
+                        bot.breakEndTime = performance.now() + 1500;
+                    }, 2200);
                 }
                 
                 updateLeaderboard();
@@ -3133,8 +4262,28 @@
         });
 
         // Game Animation / Tick Loop
+        let lastFrameTime = performance.now();
         function animate() {
             requestAnimationFrame(animate);
+
+            const animNow = performance.now();
+            const deltaMs = Math.min(100, animNow - lastFrameTime);
+            lastFrameTime = animNow;
+
+            // Update player shield & health auto-regeneration (+9 HP/s after 5s peace)
+            updatePlayerRegeneration(deltaMs);
+
+            // Animate nanite shield repair aura on player jet
+            if (typeof jetShieldAura !== 'undefined' && jetShieldAura && jetShieldAura.visible) {
+                jetShieldAura.rotation.y += 0.04;
+                jetShieldAura.rotation.x += 0.02;
+                jetShieldAura.material.opacity = 0.18 + 0.08 * Math.sin(animNow * 0.008);
+            }
+
+            // Animate ATC tower rotating radar antenna dish
+            if (typeof atcRadarMesh !== 'undefined' && atcRadarMesh) {
+                atcRadarMesh.rotation.y += 0.035;
+            }
 
             // Update explosion particles
             for (let i = particles.length - 1; i >= 0; i--) {
@@ -3168,14 +4317,6 @@
                     fb.mesh.material.opacity = Math.max(0, (exp.life / 50) - 0.1);
                 });
 
-                // Debris movement + gravity parabolic arcs
-                exp.debris.forEach(deb => {
-                    deb.velocity.y -= 0.12; // apply gravity pull
-                    deb.velocity.multiplyScalar(0.96); // drag deceleration
-                    deb.mesh.position.add(deb.velocity);
-                    deb.mesh.scale.multiplyScalar(0.97); // shrink
-                });
-
                 // Point Light decay
                 if (exp.light) {
                     exp.light.intensity *= 0.88;
@@ -3192,11 +4333,6 @@
                         scene.remove(fb.mesh);
                         fb.mesh.material.dispose();
                         fb.mesh.geometry.dispose();
-                    });
-                    exp.debris.forEach(deb => {
-                        scene.remove(deb.mesh);
-                        deb.mesh.material.dispose();
-                        deb.mesh.geometry.dispose();
                     });
                     if (exp.light) {
                         scene.remove(exp.light);
@@ -3272,10 +4408,16 @@
 
                 // Vertical controls (combine mouse targetPitch and keyboard ArrowUp/ArrowDown)
                 let pitchInput = jetState.targetPitch;
-                if (keys['ArrowDown']) {
-                    pitchInput = Math.min(pitchInput + 0.32, Math.PI * 0.22); // Climb (pull down stick)
-                } else if (keys['ArrowUp']) {
-                    pitchInput = Math.max(pitchInput - 0.32, -Math.PI * 0.22); // Dive (push forward stick)
+                if (keys['ArrowUp']) {
+                    pitchInput = Math.max(pitchInput - 0.32, -Math.PI * 0.22); // Climb (Up is Up!)
+                } else if (keys['ArrowDown']) {
+                    pitchInput = Math.min(pitchInput + 0.32, Math.PI * 0.22);  // Dive (Down is Down!)
+                }
+
+                // Smooth virtual flight stick recentering decay when keyboard steering takes precedence
+                if (keys['KeyA'] || keys['KeyD'] || keys['ArrowLeft'] || keys['ArrowRight'] || keys['ArrowUp'] || keys['ArrowDown']) {
+                    mouseX *= 0.94;
+                    mouseY *= 0.94;
                 }
 
                 // Smoothly slerp current pitch and roll
@@ -3327,14 +4469,14 @@
                 // Bound altitude ceiling
                 if (jet.position.y > jetState.maxAltitude) {
                     jet.position.y = jetState.maxAltitude;
-                    if (jetState.pitch > 0) jetState.pitch *= 0.9; // level out
+                    if (jetState.pitch < 0) jetState.pitch *= 0.9; // level out
                 }
 
                 // Bound ground level & crash conditions
                 if (jet.position.y <= jetState.minAltitude) {
                     jet.position.y = jetState.minAltitude;
                     // Crash if diving straight into the ground
-                    if (jetState.pitch < -0.1 && jetState.currentSpeed > 1.3) {
+                    if (jetState.pitch > 0.1 && jetState.currentSpeed > 1.3) {
                         handlePlayerDeath();
                     } else {
                         // Safe ground taxiing
@@ -3577,6 +4719,177 @@
                     other.label.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
                 }
             });
+
+            // Animate skyscraper warning beacons (FAA style red aviation hazard pulse)
+            const beaconBlink = Math.sin(animNow * 0.005) > 0.05 ? 1.0 : 0.15;
+            for (let b = 0; b < buildingBeacons.length; b++) {
+                buildingBeacons[b].material.opacity = beaconBlink;
+            }
+
+            // Animate holographic force field shield pulse
+            if (typeof forceFieldMatSide !== 'undefined' && typeof forceFieldMatEnd !== 'undefined') {
+                const shieldPulse = 0.26 + 0.08 * Math.sin(animNow * 0.0025);
+                forceFieldMatSide.opacity = shieldPulse;
+                forceFieldMatEnd.opacity = shieldPulse;
+            }
+
+            // Update active 3D Stylized Purple Action Explosions (Anime Sci-Fi Blast Effect)
+            for (let eIdx = active3DExplosions.length - 1; eIdx >= 0; eIdx--) {
+                const exp = active3DExplosions[eIdx];
+                const age = animNow - exp.startTime;
+                if (age > exp.duration || (exp.parentModel && !exp.parentModel.parent)) {
+                    if (exp.parentModel && exp.group.parent === exp.parentModel) {
+                        exp.parentModel.remove(exp.group);
+                    } else if (exp.group.parent === scene) {
+                        scene.remove(exp.group);
+                    }
+                    active3DExplosions.splice(eIdx, 1);
+                    continue;
+                }
+
+                const progress = age / exp.duration; // 0.0 -> 1.0
+
+                // Phase 1: Rapid Eruption & Pop (0.0 -> 0.16)
+                const pop = Math.min(1.0, progress / 0.16);
+                const popScale = Math.sin(pop * Math.PI * 0.5);
+
+                // Pulse core and halo
+                const pulse = 1.0 + 0.25 * Math.sin(age * 0.025);
+                exp.core.scale.setScalar(popScale * pulse * (1.0 + progress * 0.8));
+                exp.innerGlow.scale.setScalar(popScale * pulse * (1.0 + progress * 1.4));
+                exp.core.rotation.y += 0.05;
+                exp.core.rotation.z += 0.03;
+
+                // Animate billowing anime plasma cloud lobes
+                if (exp.lobes) {
+                    for (let b = 0; b < exp.lobes.length; b++) {
+                        const lb = exp.lobes[b];
+                        const lScale = lb.targetScale * popScale * (1.0 + progress * 0.4);
+                        lb.mesh.scale.setScalar(lScale);
+                        lb.mesh.position.set(
+                            lb.basePos.x * (1.0 + progress * 0.6),
+                            lb.basePos.y * (1.0 + progress * 0.6),
+                            lb.basePos.z * (1.0 + progress * 0.6)
+                        );
+                    }
+                }
+
+                // Animate slicing shockwave rings
+                if (exp.shockRing1) {
+                    exp.shockRing1.scale.addScalar(0.12);
+                    exp.shockRing1.material.opacity = Math.max(0, 0.95 * (1.0 - progress));
+                }
+                if (exp.shockRing2) {
+                    exp.shockRing2.scale.addScalar(0.09);
+                    exp.shockRing2.material.opacity = Math.max(0, 0.9 * (1.0 - progress));
+                }
+
+                // Animate dynamic violet point light intensity
+                exp.flashLight.intensity = Math.max(0, 7.5 * (1.0 - progress));
+
+                // Animate stylized stepped action blast spikes
+                for (let s = 0; s < exp.shards.length; s++) {
+                    const shard = exp.shards[s];
+                    const sScaleX = shard.maxScaleX * popScale;
+                    const sScaleY = shard.maxScaleY * popScale * (1.0 + progress * 0.45);
+                    shard.mesh.scale.set(sScaleX, sScaleY, sScaleX);
+
+                    const travel = progress * shard.travelDist;
+                    shard.mesh.position.set(
+                        shard.dir.x * travel,
+                        shard.dir.y * travel,
+                        shard.dir.z * travel
+                    );
+                    shard.mesh.rotateOnAxis(shard.rotAxis, shard.rotSpeed);
+                }
+
+                // Smooth fade out over final 35% of duration (Pure, clean purple blast dissolve)
+                const fade = progress < 0.65 ? 1.0 : Math.max(0, (1.0 - progress) / 0.35);
+                exp.core.material.opacity = fade * 0.98;
+                exp.innerGlow.material.opacity = fade * 0.72;
+                if (exp.lobes) {
+                    for (let b = 0; b < exp.lobes.length; b++) {
+                        exp.lobes[b].mesh.material.opacity = fade * 0.92;
+                    }
+                }
+            }
+
+            // Update active Special Attack Purple Sparkle Energy Models
+            for (let sIdx = activeSpecialSparkles.length - 1; sIdx >= 0; sIdx--) {
+                const spk = activeSpecialSparkles[sIdx];
+                const age = animNow - spk.startTime;
+                if (age > spk.duration || (spk.parentModel && !spk.parentModel.parent)) {
+                    if (spk.parentModel && spk.group.parent === spk.parentModel) {
+                        spk.parentModel.remove(spk.group);
+                    } else if (spk.group.parent === scene) {
+                        scene.remove(spk.group);
+                    }
+                    activeSpecialSparkles.splice(sIdx, 1);
+                    continue;
+                }
+
+                const progress = age / spk.duration;
+
+                // Animate spinning crystal stars & twinkle
+                spk.group.rotation.y += 0.04;
+                spk.group.rotation.z += 0.02;
+
+                if (spk.stars) {
+                    for (let s = 0; s < spk.stars.length; s++) {
+                        const st = spk.stars[s];
+                        st.mesh.rotation.y += st.spinSpeed;
+                        st.mesh.rotation.x += st.spinSpeed * 0.5;
+                        const twinkle = 0.6 + 0.4 * Math.sin(animNow * 0.025 + st.offset);
+                        st.mesh.scale.setScalar(st.baseScale * (1.0 + progress * 0.4) * twinkle);
+                        st.mesh.position.add(st.velocity);
+                    }
+                }
+
+                // Animate orbiting sparkle prisms
+                if (spk.prisms) {
+                    for (let p = 0; p < spk.prisms.length; p++) {
+                        const pr = spk.prisms[p];
+                        pr.angle += pr.orbitSpeed;
+                        pr.mesh.position.set(
+                            Math.cos(pr.angle) * pr.radius,
+                            Math.sin(pr.angle * 1.5) * (pr.radius * 0.5),
+                            Math.sin(pr.angle) * pr.radius
+                        );
+                        pr.mesh.rotation.y += 0.06;
+                    }
+                }
+
+                // Expand starlight ring
+                if (spk.starlightRing) {
+                    spk.starlightRing.scale.addScalar(0.04);
+                    spk.starlightRing.material.opacity = Math.max(0, 0.85 * (1.0 - progress));
+                }
+
+                // Central core pulse
+                if (spk.core) {
+                    const corePulse = 1.0 + 0.3 * Math.sin(animNow * 0.03);
+                    spk.core.scale.setScalar(corePulse);
+                    spk.core.rotation.y += 0.08;
+                }
+
+                // Fade out
+                const fade = progress < 0.6 ? 1.0 : Math.max(0, (1.0 - progress) / 0.4);
+                if (spk.core) spk.core.material.opacity = fade * 0.96;
+                if (spk.aura) spk.aura.material.opacity = fade * 0.70;
+                if (spk.stars) {
+                    for (let s = 0; s < spk.stars.length; s++) {
+                        spk.stars[s].mesh.material.opacity = fade * 0.95;
+                    }
+                }
+                if (spk.prisms) {
+                    for (let p = 0; p < spk.prisms.length; p++) {
+                        spk.prisms[p].mesh.material.opacity = fade * 0.9;
+                    }
+                }
+                if (spk.light) {
+                    spk.light.intensity = Math.max(0, 7.0 * (1.0 - progress));
+                }
+            }
 
             renderer.render(scene, camera);
         }
