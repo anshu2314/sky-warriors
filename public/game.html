@@ -17,6 +17,8 @@
         }
     </script>
     <script src="js/config.js"></script>
+    <script src="js/economy.js"></script>
+
     <meta name="google-site-verification" content="ykUDjkWJSMjqVOOOM3kptuqwJR3qtLJxdkbDW_fxZ4o" />
     <meta charset="UTF-8">
     <title>Play Sky Warriors 2 — Free 3D Jet Dogfight Game Online | No Download</title>
@@ -1112,7 +1114,9 @@
         <div class="hud-row"><strong>THROTTLE:</strong> <span id="hud-throttle">0</span>%</div>
         <div class="hud-row"><strong>SPECIAL:</strong> <span id="hud-special">READY</span></div>
         <div class="hud-row"><strong>CAMERA:</strong> <span id="hud-camera">CHASE</span></div>
+        <div class="hud-row" id="coin-hud-row" style="display:none;color:#fcd34d;"><strong>🪙 COINS:</strong> <span id="hud-coins">0</span></div>
     </div>
+
     
     <div id="controls-help">
         <strong>FLIGHT MANUAL:</strong><br>
@@ -1175,11 +1179,23 @@
     
     <button class="leaderboard-button" onclick="toggleLeaderboard()" title="Leaderboard" style="right:20px">🏆</button>
     <a class="leaderboard-button" href="/activity.html" target="_blank" title="Activity Log &amp; Full Stats" style="right:72px;text-decoration:none;display:flex;align-items:center;justify-content:center">📋</a>
+    <button class="leaderboard-button" id="quest-hud-btn" onclick="toggleQuestPanel()" title="Quests" style="right:124px;font-size:16px">📝</button>
     <div class="leaderboard-panel" id="leaderboardPanel">
         <div class="leaderboard-title">LEADERBOARD</div>
         <ul class="leaderboard-list" id="leaderboardList"></ul>
         <a href="/activity.html" target="_blank" style="display:block;margin-top:14px;text-align:center;font-size:11px;color:#00ffcc;opacity:0.6;text-decoration:none;font-family:Courier New,monospace;">📋 Full Activity Log →</a>
     </div>
+    <!-- In-Game Quest Panel -->
+    <div id="in-game-quest-panel" style="
+        display:none;position:fixed;right:20px;top:64px;z-index:9000;
+        background:rgba(10,5,20,0.96);border:1px solid rgba(124,58,237,0.4);
+        border-radius:14px;padding:14px 16px;min-width:260px;max-width:300px;
+        font-family:'Orbitron',monospace;backdrop-filter:blur(10px);
+    ">
+        <div style="font-size:0.8rem;font-weight:700;color:#a78bfa;margin-bottom:10px;letter-spacing:1px;">📝 QUESTS</div>
+        <div id="in-game-quest-list"></div>
+    </div>
+
 
     <!-- Death Screen Overlay -->
     <div class="death-screen" id="deathScreen">
@@ -1941,12 +1957,44 @@
             const fireRight = new THREE.Mesh(fireGeom, fireMat.clone());
             nozzleRight.add(fireRight);
 
+            // ── AFTERBURNER BEAM MESHES (shown when boosting) ──
+            // Inner bright beam (core shaft)
+            const beamGeom = new THREE.CylinderGeometry(0.1, 0.42, 7, 8);
+            beamGeom.rotateX(Math.PI / 2);
+            beamGeom.translate(0, 0, -4.2);
+            const beamMat = new THREE.MeshBasicMaterial({
+                color: isEnemy ? 0xff2222 : 0x55bbff,
+                transparent: true, opacity: 0, toneMapped: false, depthWrite: false
+            });
+            const beamLeft = new THREE.Mesh(beamGeom, beamMat.clone());
+            nozzleLeft.add(beamLeft);
+            const beamRight2 = new THREE.Mesh(beamGeom, beamMat.clone());
+            nozzleRight.add(beamRight2);
+
+            // Outer wide halo glow
+            const haloGeom = new THREE.CylinderGeometry(0.3, 1.0, 10, 8);
+            haloGeom.rotateX(Math.PI / 2);
+            haloGeom.translate(0, 0, -5.8);
+            const haloMat = new THREE.MeshBasicMaterial({
+                color: isEnemy ? 0xff4444 : 0x0066ff,
+                transparent: true, opacity: 0, toneMapped: false, depthWrite: false
+            });
+            const haloLeft = new THREE.Mesh(haloGeom, haloMat.clone());
+            nozzleLeft.add(haloLeft);
+            const haloRight = new THREE.Mesh(haloGeom, haloMat.clone());
+            nozzleRight.add(haloRight);
+
             // Save elements in user data for animators
             jetGroup.userData = {
                 fireMeshes: [fireLeft, fireRight],
                 fireMaterials: [fireLeft.material, fireRight.material],
+                boostBeams: [beamLeft, beamRight2],
+                boostBeamMats: [beamLeft.material, beamRight2.material],
+                boostHalos: [haloLeft, haloRight],
+                boostHaloMats: [haloLeft.material, haloRight.material],
                 isEnemy: isEnemy
             };
+
 
             return jetGroup;
         }
@@ -1957,6 +2005,47 @@
         jet.position.set(0, 30, 0);
         scene.add(jet);
         isModelLoaded = true;
+
+        // ── Apply equipped jet skin colors ──
+        (function applyEquippedJetSkin() {
+            if (typeof ECONOMY === 'undefined') return;
+            const eq = ECONOMY.getEquippedJet();
+            if (!eq) return;
+            // Walk all meshes in the jet group and tint body/cockpit materials
+            jet.traverse(child => {
+                if (child.isMesh && child.material) {
+                    const mat = child.material;
+                    // Fire/exhaust meshes keep their engineGlow color
+                    if (mat.toneMapped === false && mat.opacity > 0.5) return;
+                    if (mat.metalness !== undefined) {
+                        // Body/structural mesh — apply jet primary color
+                        mat.color.setHex(eq.color);
+                    }
+                }
+            });
+            // Adjust max speed & health based on jet stats
+            // (applied after jetState is declared below)
+            window._equippedJetStats = { speed: eq.speed, health: eq.health, damage: eq.damage, boost: eq.boost };
+        })();
+
+        // ── Economy quest tracking vars (Single Player) ──
+        let _questBoostSecs = 0;       // Total seconds afterburner held
+        let _questSurviveSecs = 0;     // Total seconds survived this session
+        let _questBoostTimer = 0;      // fractional second accumulator for boost
+        let _questSurviveTimer = 0;    // fractional second accumulator for survive
+        let _spCoinsTotal = 0;         // Coins earned this session (SP only)
+        const _isSPMode = (localStorage.getItem('gameMode') || 'multi') === 'single';
+        if (_isSPMode && typeof ECONOMY !== 'undefined') {
+            // Show coin HUD row
+            const coinRow = document.getElementById('coin-hud-row');
+            if (coinRow) { coinRow.style.display = 'block'; }
+        }
+        function _updateHudCoins() {
+            if (!_isSPMode || typeof ECONOMY === 'undefined') return;
+            const el = document.getElementById('hud-coins');
+            if (el) el.textContent = ECONOMY.getCoins();
+        }
+        _updateHudCoins();
 
         // Nanite Repair Shield Aura (Visual indicator when health regeneration is active)
         const shieldAuraGeom = new THREE.SphereGeometry(4.8, 16, 16);
@@ -3710,6 +3799,14 @@
             document.getElementById('deathScore').textContent = `SCORE: ${scoreVal}`;
             deathScreen.classList.add('active');
 
+            // ── Economy: submit SP score on death ──
+            if (typeof ECONOMY !== 'undefined' && _isSPMode) {
+                const finalScore = parseInt(scoreVal, 10) || 0;
+                const username = getUsername();
+                ECONOMY.submitSPScore(username, finalScore);
+                ECONOMY.updateSPHighScore(finalScore);
+            }
+
             // Freeze player controls
             jetState.currentSpeed = 0;
             jetState.isAirborne = false;
@@ -3796,6 +3893,40 @@
         function toggleLeaderboard() {
             document.getElementById('leaderboardPanel').classList.toggle('active');
             updateLeaderboard();
+        }
+
+        // ── In-game Quest Panel ──
+        function toggleQuestPanel() {
+            const panel = document.getElementById('in-game-quest-panel');
+            if (!panel) return;
+            const isOpen = panel.style.display !== 'none';
+            panel.style.display = isOpen ? 'none' : 'block';
+            if (!isOpen && typeof ECONOMY !== 'undefined') {
+                renderInGameQuests();
+            }
+        }
+        function renderInGameQuests() {
+            const listEl = document.getElementById('in-game-quest-list');
+            if (!listEl || typeof ECONOMY === 'undefined') return;
+            const prog = ECONOMY.getQuestProgress();
+            listEl.innerHTML = ECONOMY.QUESTS.map(q => {
+                const cur = Math.min(prog[q.id] || 0, q.target);
+                const pct = Math.round((cur / q.target) * 100);
+                const done = ECONOMY.isQuestComplete(q.id);
+                const claimed = ECONOMY.isQuestClaimed(q.id);
+                const barColor = done ? '#22c55e' : '#7c3aed';
+                const status = claimed ? '✓' : (done ? '!' : '');
+                return `<div style="margin-bottom:10px;">
+                    <div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-bottom:3px;">
+                        <span style="color:#e2e8f0;">${q.icon} ${q.title} ${status}</span>
+                        <span style="color:#fcd34d;">🪙${q.reward}</span>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.1);border-radius:3px;height:5px;overflow:hidden;">
+                        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;transition:width .3s;"></div>
+                    </div>
+                    <div style="font-size:0.6rem;color:rgba(255,255,255,0.45);margin-top:2px;">${cur}/${q.target}</div>
+                </div>`;
+            }).join('');
         }
 
         async function updateLeaderboard() {
@@ -4150,7 +4281,40 @@
                         player.score += points;
                         document.getElementById('score').textContent = player.score;
                     }
-                    
+
+                    // ── Economy: coin reward + quest tracking ──
+                    if (typeof ECONOMY !== 'undefined' && _isSPMode) {
+                        const coinReward = isSpecial ? 10 : 5;
+                        ECONOMY.addCoins(coinReward);
+                        ECONOMY.addSPKills(1);
+                        ECONOMY.incrementQuestStat('kills', 1);
+                        // Track score quest
+                        const currentScore = (playerScores.get(playerId) && playerScores.get(playerId).score) || 0;
+                        const prog = ECONOMY.getQuestProgress();
+                        if ((prog['q_score500'] || 0) < currentScore) {
+                            // Set score progress directly to current score
+                            const qp = ECONOMY.getQuestProgress();
+                            qp['q_score500'] = currentScore;
+                            try { localStorage.setItem('sw2_quest_prog', JSON.stringify(qp)); } catch(e){}
+                        }
+                        _updateHudCoins();
+                        // Floating coin text
+                        const scoreEl = document.getElementById('score');
+                        if (scoreEl) {
+                            const flash = document.createElement('div');
+                            flash.textContent = '+' + coinReward + ' 🪙';
+                            flash.style.cssText = 'position:fixed;left:20px;top:80px;font-family:Orbitron,monospace;font-size:0.9rem;color:#fcd34d;pointer-events:none;animation:none;z-index:9999;';
+                            document.body.appendChild(flash);
+                            let op = 1; let oy = 0;
+                            const fadeIt = setInterval(() => {
+                                op -= 0.04; oy -= 1;
+                                flash.style.opacity = op;
+                                flash.style.transform = 'translateY(' + oy + 'px)';
+                                if (op <= 0) { clearInterval(fadeIt); flash.remove(); }
+                            }, 40);
+                        }
+                    }
+
                     // Hide bot model and label temporarily (simulating death)
                     bot.model.visible = false;
                     bot.label.style.display = 'none';
@@ -4500,10 +4664,69 @@
 
                 // Animate Engine Fire size based on throttle and boost
                 if (jet.userData && jet.userData.fireMeshes) {
-                    const scaleZ = 0.4 + (jetState.currentSpeed / jetState.maxSpeed) * 1.8;
-                    jet.userData.fireMeshes.forEach(fire => {
-                        fire.scale.set(1, 1, scaleZ);
+                    const isBoosting = jetState.isBoosting;
+                    const boostMul = jetState.boostMultiplier || 1.0;
+                    const scaleZ = isBoosting
+                        ? 0.6 + (jetState.currentSpeed / jetState.maxSpeed) * 2.4
+                        : 0.4 + (jetState.currentSpeed / jetState.maxSpeed) * 1.8;
+
+                    // Change fire color during boost
+                    jet.userData.fireMaterials.forEach(mat => {
+                        if (isBoosting) {
+                            const t = (boostMul - 1.0) / (jetState.maxBoostMultiplier - 1.0);
+                            mat.color.setHSL(0.6 - t * 0.3, 1.0, 0.7 + t * 0.3); // cyan → white
+                        } else {
+                            mat.color.setHex(0x00ffcc); // back to normal cyan
+                        }
                     });
+                    jet.userData.fireMeshes.forEach(fire => {
+                        fire.scale.set(isBoosting ? 1.25 : 1, isBoosting ? 1.25 : 1, scaleZ);
+                    });
+
+                    // ── Afterburner Beam Animation ──
+                    if (jet.userData.boostBeams) {
+                        const pulse = 0.65 + 0.35 * Math.sin(animNow * 0.016);
+                        const targetBeamOp = isBoosting ? 0.88 * pulse : 0.0;
+                        const targetHaloOp = isBoosting ? 0.38 * pulse : 0.0;
+                        const lerpSpeed = 0.12;
+
+                        jet.userData.boostBeamMats.forEach(mat => {
+                            mat.opacity += (targetBeamOp - mat.opacity) * lerpSpeed;
+                            // shift color toward white-blue at full boost
+                            const t2 = (boostMul - 1.0) / (jetState.maxBoostMultiplier - 1.0);
+                            mat.color.setHex(t2 > 0.7 ? 0xaadcff : 0x55bbff);
+                        });
+                        jet.userData.boostBeams.forEach(beam => {
+                            const scaleTarget = isBoosting ? (0.75 + 0.55 * pulse) : 0.02;
+                            beam.scale.x += (scaleTarget - beam.scale.x) * lerpSpeed;
+                            beam.scale.y = beam.scale.x;
+                            beam.scale.z += (1.0 - beam.scale.z) * lerpSpeed; // length stays constant
+                        });
+                        jet.userData.boostHaloMats.forEach(mat => {
+                            mat.opacity += (targetHaloOp - mat.opacity) * lerpSpeed;
+                        });
+                    }
+                }
+
+                // ── Quest: boost & survive timers (per-frame, SP only) ──
+                if (typeof ECONOMY !== 'undefined' && _isSPMode) {
+                    const dtSecs = deltaMs / 1000;
+                    // Survive timer
+                    _questSurviveTimer += dtSecs;
+                    if (_questSurviveTimer >= 1) {
+                        const whole = Math.floor(_questSurviveTimer);
+                        _questSurviveTimer -= whole;
+                        ECONOMY.incrementQuestStat('survive', whole);
+                    }
+                    // Boost timer
+                    if (jetState.isBoosting) {
+                        _questBoostTimer += dtSecs;
+                        if (_questBoostTimer >= 1) {
+                            const bwhole = Math.floor(_questBoostTimer);
+                            _questBoostTimer -= bwhole;
+                            ECONOMY.incrementQuestStat('boost', bwhole);
+                        }
+                    }
                 }
 
                 // --- TARGET ACQUISITION & LOCK-ON (Guided Missile Assist) ---
@@ -4546,6 +4769,11 @@
                                 fireMissile(true); // Launch heavy special homing orb!
                                 specialAttackFiredForLock = true;
                                 triggerHitmarker();
+                                // Economy: track special quest
+                                if (typeof ECONOMY !== 'undefined' && _isSPMode) {
+                                    ECONOMY.incrementQuestStat('special', 1);
+                                }
+
                             }
                         }
                     } else {
