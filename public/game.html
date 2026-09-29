@@ -1048,6 +1048,7 @@
 
     <!-- Three.js Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/jet_models.js"></script>
 </head>
 <body>
     <!-- Space.io Style Clean Controls Screen Overlay -->
@@ -1120,7 +1121,7 @@
     
     <div id="controls-help">
         <strong>FLIGHT MANUAL:</strong><br>
-        • MOUSE / ARROWS to Steer (Up=Up, Down=Down)<br>
+        • MOUSE / ARROWS to Steer (Pull mouse down = climb, push mouse up = dive. I toggles mouse pitch.)<br>
         • W/S to Adjust Throttle<br>
         • SHIFT for Afterburner<br>
         • HOLD LEFT CLICK / SPACE to Spray & Charge<br>
@@ -1180,7 +1181,12 @@
     <button class="leaderboard-button" onclick="toggleLeaderboard()" title="Leaderboard" style="right:20px">🏆</button>
     <a class="leaderboard-button" href="/activity.html" target="_blank" title="Activity Log &amp; Full Stats" style="right:72px;text-decoration:none;display:flex;align-items:center;justify-content:center">📋</a>
     <button class="leaderboard-button" id="quest-hud-btn" onclick="toggleQuestPanel()" title="Quests" style="right:124px;font-size:16px">📝</button>
+    <!-- DISCORD SERVER BUTTON (Replace href with your Discord server invite link) -->
+    <a class="leaderboard-button" id="btn-discord-hud" href="https://discord.gg/YOUR_DISCORD_INVITE" target="_blank" rel="noopener noreferrer" title="Join our Discord Server" style="right:176px;text-decoration:none;display:flex;align-items:center;justify-content:center;background:rgba(88,101,242,0.85);border-color:#5865f2;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+    </a>
     <div class="leaderboard-panel" id="leaderboardPanel">
+
         <div class="leaderboard-title">LEADERBOARD</div>
         <ul class="leaderboard-list" id="leaderboardList"></ul>
         <a href="/activity.html" target="_blank" style="display:block;margin-top:14px;text-align:center;font-size:11px;color:#00ffcc;opacity:0.6;text-decoration:none;font-family:Courier New,monospace;">📋 Full Activity Log →</a>
@@ -1231,12 +1237,17 @@
         let targetLockDuration = 0; // Lock timer for auto special attack
         let specialAttackFiredForLock = false; // Prevents spamming special attack during same lock session
         let lastNetworkUpdate = 0; // Throttle timer for WS update sends
+        let riverWaterTex = null;
+        let riverBumpTex = null;
 
         // Scene setup
         const scene = new THREE.Scene();
 
-        // Custom Gradient Bright Day Sky (Enlarged to 3500 to fully cover the 2000x3600 map)
-        const skyGeo = new THREE.SphereGeometry(3500, 32, 15);
+        // Atmospheric Distance Fog (Blends distant mountains, sky, and terrain naturally)
+        scene.fog = new THREE.FogExp2(0x7bbce8, 0.00025);
+
+        // Custom Gradient Daytime Sky (Scaled to 6000 to cover the vast 3600x5400 map)
+        const skyGeo = new THREE.SphereGeometry(6000, 32, 15);
         const skyMat = new THREE.ShaderMaterial({
             vertexShader: `
                 varying vec3 vWorldPosition;
@@ -1252,16 +1263,16 @@
                     vec3 d = normalize(vWorldPosition);
                     float h = d.y;
                     
-                    // Bright, clear daytime color palette
-                    vec3 zenithColor = vec3(0.2, 0.55, 0.95);  // Vibrant Sky Blue
-                    vec3 horizonColor = vec3(0.75, 0.92, 1.0); // Bright Cyan Haze
-                    vec3 groundColor = vec3(0.18, 0.35, 0.22); // Light Green Ground Haze
+                    // Rich atmospheric sky matching fog horizon
+                    vec3 zenithColor = vec3(0.16, 0.48, 0.92);  // Vibrant Aerospace Blue
+                    vec3 horizonColor = vec3(0.48, 0.74, 0.91); // Soft Horizon Fog Blending
+                    vec3 groundColor = vec3(0.18, 0.38, 0.24); // Lush Forest Ground Haze
                     
                     vec3 skyColor;
                     if (h >= 0.0) {
-                        skyColor = mix(horizonColor, zenithColor, pow(h, 0.5));
+                        skyColor = mix(horizonColor, zenithColor, pow(h, 0.42));
                     } else {
-                        skyColor = mix(horizonColor, groundColor, clamp(-h * 5.0, 0.0, 1.0));
+                        skyColor = mix(horizonColor, groundColor, clamp(-h * 4.0, 0.0, 1.0));
                     }
                     gl_FragColor = vec4(skyColor, 1.0);
                 }
@@ -1271,18 +1282,18 @@
         const sky = new THREE.Mesh(skyGeo, skyMat);
         scene.add(sky);
 
-        // Glowing Sunset Sun (Enlarged and positioned relative to the enlarged 3500 sky dome)
-        const sunGeom = new THREE.SphereGeometry(100, 16, 16);
-        const sunMat = new THREE.MeshBasicMaterial({ color: 0xfff0dd, toneMapped: false });
+        // Glowing Sunset Sun (Positioned over the expanded horizon)
+        const sunGeom = new THREE.SphereGeometry(140, 16, 16);
+        const sunMat = new THREE.MeshBasicMaterial({ color: 0xfff3e0, toneMapped: false });
         const sun = new THREE.Mesh(sunGeom, sunMat);
-        sun.position.set(0, 450, -3200);
+        sun.position.set(0, 750, -4800);
         scene.add(sun);
 
-        const sunGlowGeom = new THREE.SphereGeometry(220, 16, 16);
+        const sunGlowGeom = new THREE.SphereGeometry(320, 16, 16);
         const sunGlowMat = new THREE.MeshBasicMaterial({
-            color: 0xff6600,
+            color: 0xff7700,
             transparent: true,
-            opacity: 0.3,
+            opacity: 0.35,
             blending: THREE.AdditiveBlending,
             toneMapped: false
         });
@@ -1290,79 +1301,80 @@
         sunGlow.position.copy(sun.position);
         scene.add(sunGlow);
 
-        // Camera set with 4500 far clipping plane to see the expanded environment borders
-        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.2, 4500);
+        // Camera set with 7000 far clipping plane to see the vast new world
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.2, 7000);
         camera.position.set(0, 5, -15);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.0;
+        renderer.toneMappingExposure = 1.05;
         document.body.appendChild(renderer.domElement);
 
         // Lighting
-        const ambientLight = new THREE.AmbientLight(0x352848, 1.3);
+        const ambientLight = new THREE.AmbientLight(0x403858, 1.35);
         scene.add(ambientLight);
 
-        // Sun light casting low, warm orange sunset rays
-        const sunLight = new THREE.DirectionalLight(0xffaa66, 2.5);
+        // Sun light casting low, warm orange rays
+        const sunLight = new THREE.DirectionalLight(0xffb577, 2.6);
         sunLight.position.copy(sun.position);
         sunLight.castShadow = true;
         sunLight.shadow.mapSize.width = 1024;
         sunLight.shadow.mapSize.height = 1024;
         scene.add(sunLight);
 
-        // Stylized Grid Ground Setup (Bright Day Terrain - Enlarged)
-        const groundGeometry = new THREE.PlaneGeometry(2000, 3600);
+        // Stylized Grid Ground Setup (Massive 4200 x 6000 World Plane)
+        const groundGeometry = new THREE.PlaneGeometry(4200, 6000);
         const groundMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x1f4e2e, // Bright Forest Green
-            roughness: 0.85, 
-            metalness: 0.1 
+            color: 0x1c4426, // Deep Forest Green
+            roughness: 0.88, 
+            metalness: 0.08 
         });
         const ground = new THREE.Mesh(groundGeometry, groundMaterial);
         ground.rotation.x = -Math.PI / 2;
         ground.receiveShadow = true;
         scene.add(ground);
 
-        // Tech Green Grid Lines Overlay (Bright & High Visibility - Enlarged)
-        const gridHelper = new THREE.GridHelper(3600, 150, 0x00ff88, 0x008844);
+        // Tech Green Grid Lines Overlay (High Visibility across 6000 units)
+        const gridHelper = new THREE.GridHelper(6000, 240, 0x00ff88, 0x008844);
         gridHelper.position.y = 0.05;
-        gridHelper.material.opacity = 0.7; // Raised opacity for visibility
+        gridHelper.material.opacity = 0.65;
         gridHelper.material.transparent = true;
         gridHelper.material.toneMapped = false;
         scene.add(gridHelper);
 
-        // Runway Asphalt Road (Bright gray asphalt runway - Enlarged)
-        const roadGeometry = new THREE.PlaneGeometry(12, 3600);
-        const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x2d343c, roughness: 0.6 });
+        // Runway Asphalt Road (Extended to 5400 units)
+        const roadGeometry = new THREE.PlaneGeometry(14, 5400);
+        const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x272d36, roughness: 0.6 });
         const road = new THREE.Mesh(roadGeometry, roadMaterial);
         road.position.y = 0.1;
         road.rotation.x = -Math.PI / 2;
         scene.add(road);
 
         // Glowing Neon Center Line down the runway
-        const centerLineGeom = new THREE.PlaneGeometry(0.2, 3600);
+        const centerLineGeom = new THREE.PlaneGeometry(0.25, 5400);
         const centerLineMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, toneMapped: false });
         const centerLine = new THREE.Mesh(centerLineGeom, centerLineMat);
         centerLine.position.set(0, 0.12, 0);
         centerLine.rotation.x = -Math.PI / 2;
         scene.add(centerLine);
 
-        // Neon Runway Lights (Bright HDR Glow enabled - Enlarged path)
-        const lightGeom = new THREE.SphereGeometry(0.14, 8, 8);
+        // Neon Runway Lights (Bright HDR Glow enabled along entire 5400 length)
+        const lightGeom = new THREE.SphereGeometry(0.16, 8, 8);
         const lightMatLeft = new THREE.MeshBasicMaterial({ color: 0x00ffcc, toneMapped: false });
         const lightMatRight = new THREE.MeshBasicMaterial({ color: 0xff00bb, toneMapped: false });
         
-        for (let z = -1800; z <= 1800; z += 50) {
+        for (let z = -2600; z <= 2600; z += 50) {
             const l = new THREE.Mesh(lightGeom, lightMatLeft);
-            l.position.set(-6, 0.2, z);
+            l.position.set(-7, 0.2, z);
             scene.add(l);
 
             const r = new THREE.Mesh(lightGeom, lightMatRight);
-            r.position.set(6, 0.2, z);
+            r.position.set(7, 0.2, z);
             scene.add(r);
         }
+
 
         // --- POLISHED GROUND & MILITARY AIRBASE ASSETS (ZERO OVERLAPS) ---
         let atcRadarMesh = null; // For animated rotation
@@ -1370,13 +1382,11 @@
         // Centralized Airbase & Corridor exclusion zone check (prevents road, park, building, tree overlaps)
         function isAirbaseZone(x, z) {
             // 1. Runway Road Corridor (Keep x = -32 to +32 clear along entire runway)
-            if (Math.abs(x) < 32 && Math.abs(z) < 1850) return true;
+            if (Math.abs(x) < 32 && Math.abs(z) < 2700) return true;
             // 2. Parking Apron, Taxiways, Hangars, Helipads, and ATC Tower (x: 15 to 115, z: -350 to 300)
             if (x >= 15 && x <= 115 && z >= -350 && z <= 300) return true;
             // 3. Fuel Storage Tank Depot (x: -95 to -25, z: -115 to -15)
             if (x >= -95 && x <= -25 && z >= -115 && z <= -15) return true;
-            // 4. Scenic River Canal Corridor along eastern landscape (x: 340 to 420)
-            if (Math.abs(x - 380) < 45) return true;
             return false;
         }
 
@@ -1388,7 +1398,7 @@
             stripeGeom.rotateX(-Math.PI / 2);
             const stripeMat = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
             
-            const thresholdZPositions = [-1700, -750, 0, 750, 1700];
+            const thresholdZPositions = [-2400, -1600, -800, 0, 800, 1600, 2400];
             thresholdZPositions.forEach(tz => {
                 for (let s = -4.5; s <= 4.5; s += 1.25) {
                     const stripe = new THREE.Mesh(stripeGeom, stripeMat);
@@ -1398,15 +1408,16 @@
             });
 
             // 2. Runway Edge Caution Stripes (Yellow hazard curbs along both runway flanks)
-            const curbGeom = new THREE.PlaneGeometry(0.6, 3600);
+            const curbGeom = new THREE.PlaneGeometry(0.6, 5400);
             curbGeom.rotateX(-Math.PI / 2);
             const curbMat = new THREE.MeshStandardMaterial({ color: 0xcca010, roughness: 0.7 });
             const curbL = new THREE.Mesh(curbGeom, curbMat);
-            curbL.position.set(-6.3, 0.11, 0);
+            curbL.position.set(-7.3, 0.11, 0);
             airbaseGroup.add(curbL);
             const curbR = new THREE.Mesh(curbGeom, curbMat);
-            curbR.position.set(6.3, 0.11, 0);
+            curbR.position.set(7.3, 0.11, 0);
             airbaseGroup.add(curbR);
+
 
             // 3. Concrete Parking Apron ("Park" Tarmac) on Right Flank (x: 30 to 100, z: -230 to +230)
             const apronGeom = new THREE.PlaneGeometry(70, 460);
@@ -1641,26 +1652,6 @@
                 airbaseGroup.add(cross);
             });
 
-            // 9. Scenic River Canal along eastern landscape (parallel at x = 380, never cuts across runway!)
-            const riverGeom = new THREE.PlaneGeometry(38, 3600);
-            riverGeom.rotateX(-Math.PI / 2);
-            const riverMat = new THREE.MeshStandardMaterial({
-                color: 0x0a2540,
-                roughness: 0.15,
-                metalness: 0.85,
-                transparent: true,
-                opacity: 0.92
-            });
-            const river = new THREE.Mesh(riverGeom, riverMat);
-            river.position.set(380, 0.08, 0);
-            airbaseGroup.add(river);
-
-            const bankGeom = new THREE.PlaneGeometry(42, 3600);
-            bankGeom.rotateX(-Math.PI / 2);
-            const bankMat = new THREE.MeshBasicMaterial({ color: 0x0088cc, toneMapped: false });
-            const bank = new THREE.Mesh(bankGeom, bankMat);
-            bank.position.set(380, 0.07, 0);
-            airbaseGroup.add(bank);
 
             // 10. Battlefield Scorched Impact Craters (Planted in wilderness)
             const craterGeom = new THREE.RingGeometry(3, 14, 18);
@@ -1754,52 +1745,56 @@
             depthWrite: false
         });
 
-        // Left wall
-        const leftWallGeom = new THREE.PlaneGeometry(3600, 300);
+        // Left wall (Boundary at x = -1760)
+        const leftWallGeom = new THREE.PlaneGeometry(5400, 450);
         const leftWall = new THREE.Mesh(leftWallGeom, forceFieldMatSide);
-        leftWall.position.set(-960, 150, 0);
+        leftWall.position.set(-1760, 225, 0);
         leftWall.rotation.y = Math.PI / 2;
         scene.add(leftWall);
 
-        // Right wall
+        // Right wall (Boundary at x = 1760)
         const rightWall = new THREE.Mesh(leftWallGeom, forceFieldMatSide);
-        rightWall.position.set(960, 150, 0);
+        rightWall.position.set(1760, 225, 0);
         rightWall.rotation.y = Math.PI / 2;
         scene.add(rightWall);
 
-        // Front wall
-        const frontWallGeom = new THREE.PlaneGeometry(2000, 300);
+        // Front wall (Boundary at z = 2660)
+        const frontWallGeom = new THREE.PlaneGeometry(3600, 450);
         const frontWall = new THREE.Mesh(frontWallGeom, forceFieldMatEnd);
-        frontWall.position.set(0, 150, 1760);
+        frontWall.position.set(0, 225, 2660);
         scene.add(frontWall);
 
-        // Back wall
+        // Back wall (Boundary at z = -2660)
         const backWall = new THREE.Mesh(frontWallGeom, forceFieldMatEnd);
-        backWall.position.set(0, 150, -1760);
+        backWall.position.set(0, 225, -2660);
         scene.add(backWall);
 
-        // Glowing perimeter laser beams at top of boundary (y = 300)
+        // Glowing perimeter laser beams at top of boundary (y = 450)
         const beamMat = new THREE.MeshBasicMaterial({ color: 0xff0055, toneMapped: false });
-        const sideBeamGeom = new THREE.CylinderGeometry(0.8, 0.8, 3600, 6);
+        const sideBeamGeom = new THREE.CylinderGeometry(0.8, 0.8, 5400, 6);
         sideBeamGeom.rotateX(Math.PI / 2);
         const beamL = new THREE.Mesh(sideBeamGeom, beamMat);
-        beamL.position.set(-960, 300, 0);
+        beamL.position.set(-1760, 450, 0);
         scene.add(beamL);
         const beamR = new THREE.Mesh(sideBeamGeom, beamMat);
-        beamR.position.set(960, 300, 0);
+        beamR.position.set(1760, 450, 0);
         scene.add(beamR);
 
-        const endBeamGeom = new THREE.CylinderGeometry(0.8, 0.8, 2000, 6);
+        const endBeamGeom = new THREE.CylinderGeometry(0.8, 0.8, 3600, 6);
         endBeamGeom.rotateZ(Math.PI / 2);
         const beamF = new THREE.Mesh(endBeamGeom, beamMat);
-        beamF.position.set(0, 300, 1760);
+        beamF.position.set(0, 450, 2660);
         scene.add(beamF);
         const beamB = new THREE.Mesh(endBeamGeom, beamMat);
-        beamB.position.set(0, 300, -1760);
+        beamB.position.set(0, 450, -2660);
         scene.add(beamB);
 
+
         // Procedural 3D Fighter Jet Builder (Standard primitives, highly optimized, 0 lags)
-        function createProceduralJet(isEnemy = false) {
+        function createProceduralJet(isEnemy = false, jetId = null) {
+            if (typeof JetModels !== 'undefined') {
+                return JetModels.buildJet(jetId || (isEnemy ? 'raptor' : 'falcon'), isEnemy);
+            }
             const jetGroup = new THREE.Group();
 
             const bodyColor = isEnemy ? 0xb51a2b : 0x4a5d6e; // Vivid Crimson red for enemy, steel blue for player
@@ -2000,29 +1995,23 @@
         }
 
         // Initialize players (airborne launch!)
-        let jet = createProceduralJet(false);
-        jet.scale.set(1.48, 1.48, 1.48); // Enlarged jet model for superior visibility and cool look!
+        const equippedJetData = (typeof ECONOMY !== 'undefined') ? ECONOMY.getEquippedJet() : null;
+        const equippedJetId = (equippedJetData && equippedJetData.id) ? equippedJetData.id : 'falcon';
+        let jet = (typeof JetModels !== 'undefined')
+            ? JetModels.buildJet(equippedJetId, false, { scale: 1.48 })
+            : createProceduralJet(false);
+        if (typeof JetModels === 'undefined') {
+            jet.scale.set(1.48, 1.48, 1.48); // Enlarged jet model for superior visibility and cool look!
+        }
         jet.position.set(0, 30, 0);
         scene.add(jet);
         isModelLoaded = true;
 
-        // ── Apply equipped jet skin colors ──
-        (function applyEquippedJetSkin() {
+        // ── Apply equipped jet stats ──
+        (function applyEquippedJetStats() {
             if (typeof ECONOMY === 'undefined') return;
             const eq = ECONOMY.getEquippedJet();
             if (!eq) return;
-            // Walk all meshes in the jet group and tint body/cockpit materials
-            jet.traverse(child => {
-                if (child.isMesh && child.material) {
-                    const mat = child.material;
-                    // Fire/exhaust meshes keep their engineGlow color
-                    if (mat.toneMapped === false && mat.opacity > 0.5) return;
-                    if (mat.metalness !== undefined) {
-                        // Body/structural mesh — apply jet primary color
-                        mat.color.setHex(eq.color);
-                    }
-                }
-            });
             // Adjust max speed & health based on jet stats
             // (applied after jetState is declared below)
             window._equippedJetStats = { speed: eq.speed, health: eq.health, damage: eq.damage, boost: eq.boost };
@@ -2083,10 +2072,11 @@
             // Mechanics
             isAirborne: true, // Start airborne
             minAltitude: 0.5,
-            maxAltitude: 500, // Raised ceiling limit to 500 units
-            mapWidth: 2000,   // Doubled map width!
-            mapLength: 3600,  // Substantially increased map length!
+            maxAltitude: 650, // Raised ceiling limit to 650 units for mountain passes
+            mapWidth: 3600,   // Vastly expanded world width!
+            mapLength: 5400,  // Vastly expanded world length!
             boundaryMargin: 40,
+
 
             // Control status
             isAccelerating: false,
@@ -2101,6 +2091,13 @@
             pitchSpeed: 0.15, // Fast climb/dive response
             rollSpeed: 0.16,  // Instant banking response
             yawRate: 0.048,   // Sharp bank-steering turn rate
+            invertMousePitch: (function() {
+                try {
+                    return localStorage.getItem('invertMousePitch') === 'true';
+                } catch (e) {
+                    return false;
+                }
+            })(),
 
             // View & Target Locks
             cameraView: 'chase', // 'chase' or 'cockpit'
@@ -2124,131 +2121,557 @@
             }
         };
 
-        // Procedural Obstacles & Environment (Fully Instanced = 0 Draw Call overhead)
+        // ═══════════════════════════════════════════════════════════════
+        // PROCEDURAL WORLD ENVIRONMENT (Minecraft-Style Terrain & City)
+        // ═══════════════════════════════════════════════════════════════
+        const buildingBeacons = [];
+
         function createEnvironment() {
-            // 1. Procedural Snow-Capped Mountains (Pyramids along borders)
-            const mountainPositions = [];
-            
-            // Place mountains on borders of the enlarged map
-            for (let z = -1800; z <= 1800; z += 90) {
-                mountainPositions.push(new THREE.Vector3(-990, 0, z));
-                mountainPositions.push(new THREE.Vector3(990, 0, z));
-            }
-            for (let x = -990; x <= 990; x += 90) {
-                mountainPositions.push(new THREE.Vector3(x, 0, 1790));
-                mountainPositions.push(new THREE.Vector3(x, 0, -1790));
-            }
-
-            const mountainCount = mountainPositions.length;
-            const mBaseGeom = new THREE.ConeGeometry(30, 60, 4); // 4-sided pyramid
-            mBaseGeom.rotateY(Math.PI / 4);
-            const mBaseMat = new THREE.MeshStandardMaterial({ 
-                color: 0x3d4149, 
-                roughness: 0.95, 
-                flatShading: true 
-            });
-
-            const mSnowGeom = new THREE.ConeGeometry(9.2, 18, 4);
-            mSnowGeom.rotateY(Math.PI / 4);
-            const mSnowMat = new THREE.MeshStandardMaterial({ 
-                color: 0xffffff, 
-                roughness: 0.9, 
-                flatShading: true 
-            });
-
-            const mountainBaseInstances = new THREE.InstancedMesh(mBaseGeom, mBaseMat, mountainCount);
-            const mountainSnowInstances = new THREE.InstancedMesh(mSnowGeom, mSnowMat, mountainCount);
-            
             const dummy = new THREE.Object3D();
-            for (let i = 0; i < mountainCount; i++) {
-                const pos = mountainPositions[i];
-                const scale = 0.8 + Math.random() * 0.5;
-                const offsetH = -4 + Math.random() * 8;
-                
-                // Base
-                dummy.position.set(pos.x + (Math.random() - 0.5) * 15, 30 * scale + offsetH, pos.z + (Math.random() - 0.5) * 15);
-                dummy.scale.set(scale, scale, scale);
-                dummy.rotation.y = Math.random() * Math.PI;
-                dummy.updateMatrix();
-                mountainBaseInstances.setMatrixAt(i, dummy.matrix);
 
-                // Snow
-                dummy.position.y += 30 * scale;
-                dummy.scale.set(scale, scale, scale);
-                dummy.updateMatrix();
-                mountainSnowInstances.setMatrixAt(i, dummy.matrix);
+            // ─────────────────────────────────────────────────────────────
+            // 1. MINECRAFT-STYLE ROCKY STEPPED MOUNTAINS & CANYONS (NOT POINTED!)
+            // ─────────────────────────────────────────────────────────────
+            // Block strata & crag geometries (pivot at base)
+            const blockGeom = new THREE.BoxGeometry(1, 1, 1);
+            blockGeom.translate(0, 0.5, 0);
+
+            // Jagged faceted rock boulder geometry for crags and scree
+            const boulderGeom = new THREE.DodecahedronGeometry(1, 0);
+            boulderGeom.translate(0, 0.5, 0);
+
+            // Multi-toned rocky mountain materials (Fast, 0 lag, crisp flat-shaded facets)
+            const bedrockMat = new THREE.MeshStandardMaterial({
+                color: 0x2e343d, // Dark basalt bedrock
+                roughness: 0.90,
+                metalness: 0.12,
+                flatShading: true
+            });
+            const cliffRockMat = new THREE.MeshStandardMaterial({
+                color: 0x4f5865, // Weathered granite cliff face
+                roughness: 0.85,
+                metalness: 0.18,
+                flatShading: true
+            });
+            const cragStrataMat = new THREE.MeshStandardMaterial({
+                color: 0x39404a, // Dark slate rock strata band
+                roughness: 0.88,
+                metalness: 0.15,
+                flatShading: true
+            });
+            const grassCapMat = new THREE.MeshStandardMaterial({
+                color: 0x276632, // Alpine tundra grass
+                roughness: 0.85,
+                metalness: 0.04,
+                flatShading: true
+            });
+            const snowCapMat = new THREE.MeshStandardMaterial({
+                color: 0xf1f5f9, // Glacier snow-capped peaks
+                roughness: 0.90,
+                metalness: 0.08,
+                flatShading: true
+            });
+
+            // Minecraft-Style Multi-Block Mountain Formations across Western Flank
+            const bedrockBlocks = [];
+            const cliffBlocks = [];
+            const strataBands = [];
+            const cragBoulders = [];
+            const grassCaps = [];
+            const snowCaps = [];
+
+            // Seeded procedural random generator for consistent terrain layout
+            let seed = 12345;
+            function pseudoRandom() {
+                seed = (seed * 9301 + 49297) % 233280;
+                return seed / 233280;
             }
-            scene.add(mountainBaseInstances);
-            scene.add(mountainSnowInstances);
 
-            // 2. Procedural Trees on terrain (Instanced Pines)
-            const trunkGeom = new THREE.CylinderGeometry(0.35, 0.5, 3.2, 5);
-            trunkGeom.translate(0, 1.6, 0); // pivot at bottom
-            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5a3a22, roughness: 0.9, flatShading: true });
+            // Function to build a realistic mountain out of multiple stepped blocks
+            function buildMountain(mx, mz, peakH, baseRadius, isSnowy) {
+                const tiers = Math.max(3, Math.min(8, Math.floor(peakH / 38)));
+                const tierH = peakH / tiers;
 
-            const foliageGeom = new THREE.ConeGeometry(1.6, 5.5, 5);
-            foliageGeom.translate(0, 4.8, 0);
-            const foliageMat = new THREE.MeshStandardMaterial({ color: 0x206030, roughness: 0.85, flatShading: true });
+                for (let t = 0; t < tiers; t++) {
+                    const curY = t * tierH;
+                    const tierProgress = t / (tiers - 1 || 1); // 0 at base to 1 at peak
+                    const curRadius = baseRadius * (1 - tierProgress * 0.78);
+                    const blockSize = Math.max(22, Math.min(48, curRadius * 0.42));
 
-            const treeCount = 500; // Increased tree density for larger map
-            const treeTrunkInstances = new THREE.InstancedMesh(trunkGeom, trunkMat, treeCount);
-            const treeFoliageInstances = new THREE.InstancedMesh(foliageGeom, foliageMat, treeCount);
-            
+                    // Cluster multiple stepped blocks around the tier perimeter
+                    const blockCount = Math.max(2, Math.floor((Math.PI * 2 * curRadius) / (blockSize * 1.35)));
+                    for (let b = 0; b < blockCount; b++) {
+                        const angle = (b / blockCount) * Math.PI * 2 + (pseudoRandom() - 0.5) * 0.45;
+                        const dist = curRadius * (0.62 + pseudoRandom() * 0.42);
+                        const bx = mx + Math.cos(angle) * dist;
+                        const bz = mz + Math.sin(angle) * dist;
+                        const bw = blockSize * (0.8 + pseudoRandom() * 0.45);
+                        const bd = blockSize * (0.8 + pseudoRandom() * 0.45);
+                        const bh = tierH * (0.85 + pseudoRandom() * 0.35);
+
+                        if (t === tiers - 1 && isSnowy) {
+                            snowCaps.push({ x: bx, y: curY, z: bz, w: bw, h: bh + 2, d: bd });
+                        } else if (t === tiers - 1 || (t >= tiers - 2 && !isSnowy && pseudoRandom() > 0.35)) {
+                            grassCaps.push({ x: bx, y: curY, z: bz, w: bw, h: bh, d: bd });
+                        } else if (t === 0 || pseudoRandom() > 0.6) {
+                            bedrockBlocks.push({ x: bx, y: curY, z: bz, w: bw, h: bh, d: bd });
+                        } else if (pseudoRandom() > 0.5) {
+                            cliffBlocks.push({ x: bx, y: curY, z: bz, w: bw, h: bh, d: bd });
+                        } else {
+                            strataBands.push({ x: bx, y: curY, z: bz, w: bw, h: bh, d: bd });
+                        }
+                    }
+
+                    // Stepped core block inside to prevent gaps
+                    const coreW = curRadius * 0.85;
+                    const coreD = curRadius * 0.85;
+                    if (t === 0) {
+                        bedrockBlocks.push({ x: mx, y: curY, z: mz, w: coreW, h: tierH, d: coreD });
+                    } else if (t < tiers - 1) {
+                        cliffBlocks.push({ x: mx, y: curY, z: mz, w: coreW, h: tierH, d: coreD });
+                    }
+                }
+
+                // Add scree boulders around the mountain base
+                const boulderCount = Math.floor(1 + pseudoRandom() * 3);
+                for (let bc = 0; bc < boulderCount; bc++) {
+                    const bAngle = pseudoRandom() * Math.PI * 2;
+                    const bDist = baseRadius * (0.95 + pseudoRandom() * 0.35);
+                    cragBoulders.push({
+                        x: mx + Math.cos(bAngle) * bDist,
+                        y: 0,
+                        z: mz + Math.sin(bAngle) * bDist,
+                        s: 7 + pseudoRandom() * 12,
+                        rx: pseudoRandom() * Math.PI,
+                        ry: pseudoRandom() * Math.PI,
+                        rz: pseudoRandom() * Math.PI
+                    });
+                }
+            }
+
+            // Generate Diverse Terrain: BIG towering peaks, MEDIUM ridges, and SMALL foothills
+            // Mountain massifs along West flank (z: -2500 to 2500, x: -1650 to -480)
+            for (let z = -2500; z <= 2500; z += 140) {
+                // CANYON GORGE 1 ("Titan Pass"): z between -560 and -100
+                const inCanyon1 = (z >= -560 && z <= -100);
+                // CANYON GORGE 2 ("Shadow Valley"): z between 800 and 1260
+                const inCanyon2 = (z >= 800 && z <= 1260);
+
+                if (inCanyon1 || inCanyon2) {
+                    // Place multi-block canyon rim walls on the far outer edge
+                    const canyonX = -1550 + (pseudoRandom() - 0.5) * 60;
+                    buildMountain(canyonX, z, 90 + pseudoRandom() * 40, 75 + pseudoRandom() * 20, false);
+                    continue;
+                }
+
+                // Distribute multiple mountains of varied sizes across the flank
+                for (let x = -1600; x <= -520; x += 190) {
+                    const mx = x + (pseudoRandom() - 0.5) * 65;
+                    const mz = z + (pseudoRandom() - 0.5) * 60;
+                    const distFromEdge = (Math.abs(mx) - 480) / 1120; // 0 (near valley) to 1 (outer rim)
+
+                    // Variety: Big peaks on outer rim, medium in mid-flank, small foothills near valley
+                    const typeRoll = pseudoRandom();
+                    if (distFromEdge > 0.65 && typeRoll > 0.45) {
+                        // BIG Towering Peak (Snow-capped, towering 240 - 340 units)
+                        const peakH = 240 + pseudoRandom() * 100;
+                        const radius = 130 + pseudoRandom() * 50;
+                        buildMountain(mx, mz, peakH, radius, true);
+                    } else if (distFromEdge > 0.35 || typeRoll > 0.5) {
+                        // MEDIUM Mountain Ridge (110 - 190 units)
+                        const peakH = 110 + pseudoRandom() * 80;
+                        const radius = 85 + pseudoRandom() * 35;
+                        buildMountain(mx, mz, peakH, radius, false);
+                    } else {
+                        // SMALL Rolling Foothill (35 - 75 units)
+                        const peakH = 35 + pseudoRandom() * 40;
+                        const radius = 50 + pseudoRandom() * 25;
+                        buildMountain(mx, mz, peakH, radius, false);
+                    }
+                }
+            }
+
+            // Natural Rock Arch Bridges across the canyon passes (Fly Underneath!)
+            // Titan Arch across Gorge 1 (z = -330)
+            cliffBlocks.push({ x: -1050, y: 72, z: -330, w: 420, h: 14, d: 42 });
+            grassCaps.push({ x: -1050, y: 86, z: -330, w: 420, h: 3, d: 42 });
+            bedrockBlocks.push({ x: -1250, y: 0, z: -330, w: 80, h: 72, d: 48 });
+            bedrockBlocks.push({ x: -850, y: 0, z: -330, w: 80, h: 72, d: 48 });
+
+            // Shadow Arch across Gorge 2 (z = 1040)
+            cliffBlocks.push({ x: -1080, y: 82, z: 1040, w: 440, h: 16, d: 44 });
+            grassCaps.push({ x: -1080, y: 98, z: 1040, w: 440, h: 3, d: 44 });
+            bedrockBlocks.push({ x: -1290, y: 0, z: 1040, w: 84, h: 82, d: 50 });
+            bedrockBlocks.push({ x: -870, y: 0, z: 1040, w: 84, h: 82, d: 50 });
+
+            // Stepped border mountain ranges along North & South perimeters
+            for (let x = -1600; x <= 1600; x += 200) {
+                if (Math.abs(x) < 55) continue; // Keep runway flight paths clear
+                const nH = 70 + pseudoRandom() * 95;
+                bedrockBlocks.push({ x: x, y: 0, z: 2600, w: 180, h: nH * 0.55, d: 150 });
+                cliffBlocks.push({ x: x, y: nH * 0.55, z: 2600, w: 140, h: nH * 0.45, d: 120 });
+                if (nH > 130) {
+                    snowCaps.push({ x: x, y: nH, z: 2600, w: 140, h: 4, d: 120 });
+                } else {
+                    grassCaps.push({ x: x, y: nH, z: 2600, w: 140, h: 3, d: 120 });
+                }
+
+                const sH = 70 + pseudoRandom() * 95;
+                bedrockBlocks.push({ x: x, y: 0, z: -2600, w: 180, h: sH * 0.55, d: 150 });
+                cliffBlocks.push({ x: x, y: sH * 0.55, z: -2600, w: 140, h: sH * 0.45, d: 120 });
+                if (sH > 130) {
+                    snowCaps.push({ x: x, y: sH, z: -2600, w: 140, h: 4, d: 120 });
+                } else {
+                    grassCaps.push({ x: x, y: sH, z: -2600, w: 140, h: 3, d: 120 });
+                }
+            }
+
+            // Build Instanced Meshes for Mountains (0 LAG, 6 draw calls total for entire range!)
+            const bedrockInst = new THREE.InstancedMesh(blockGeom, bedrockMat, bedrockBlocks.length);
+            for (let i = 0; i < bedrockBlocks.length; i++) {
+                const b = bedrockBlocks[i];
+                dummy.position.set(b.x, b.y, b.z);
+                dummy.scale.set(b.w, b.h, b.d);
+                dummy.rotation.set(0, 0, 0);
+                dummy.updateMatrix();
+                bedrockInst.setMatrixAt(i, dummy.matrix);
+            }
+            scene.add(bedrockInst);
+
+            const cliffInst = new THREE.InstancedMesh(blockGeom, cliffRockMat, cliffBlocks.length);
+            for (let i = 0; i < cliffBlocks.length; i++) {
+                const b = cliffBlocks[i];
+                dummy.position.set(b.x, b.y, b.z);
+                dummy.scale.set(b.w, b.h, b.d);
+                dummy.rotation.set(0, 0, 0);
+                dummy.updateMatrix();
+                cliffInst.setMatrixAt(i, dummy.matrix);
+            }
+            scene.add(cliffInst);
+
+            const strataInst = new THREE.InstancedMesh(blockGeom, cragStrataMat, strataBands.length);
+            for (let i = 0; i < strataBands.length; i++) {
+                const b = strataBands[i];
+                dummy.position.set(b.x, b.y, b.z);
+                dummy.scale.set(b.w, b.h, b.d);
+                dummy.rotation.set(0, 0, 0);
+                dummy.updateMatrix();
+                strataInst.setMatrixAt(i, dummy.matrix);
+            }
+            scene.add(strataInst);
+
+            const grassInst = new THREE.InstancedMesh(blockGeom, grassCapMat, grassCaps.length);
+            for (let i = 0; i < grassCaps.length; i++) {
+                const b = grassCaps[i];
+                dummy.position.set(b.x, b.y, b.z);
+                dummy.scale.set(b.w, b.h, b.d);
+                dummy.updateMatrix();
+                grassInst.setMatrixAt(i, dummy.matrix);
+            }
+            scene.add(grassInst);
+
+            const snowInst = new THREE.InstancedMesh(blockGeom, snowCapMat, snowCaps.length);
+            for (let i = 0; i < snowCaps.length; i++) {
+                const b = snowCaps[i];
+                dummy.position.set(b.x, b.y, b.z);
+                dummy.scale.set(b.w, b.h, b.d);
+                dummy.updateMatrix();
+                snowInst.setMatrixAt(i, dummy.matrix);
+            }
+            scene.add(snowInst);
+
+            if (cragBoulders.length > 0) {
+                const boulderInst = new THREE.InstancedMesh(boulderGeom, cliffRockMat, cragBoulders.length);
+                for (let i = 0; i < cragBoulders.length; i++) {
+                    const b = cragBoulders[i];
+                    dummy.position.set(b.x, b.y, b.z);
+                    dummy.scale.set(b.s, b.s * 0.9, b.s);
+                    dummy.rotation.set(b.rx, b.ry, b.rz);
+                    dummy.updateMatrix();
+                    boulderInst.setMatrixAt(i, dummy.matrix);
+                }
+                scene.add(boulderInst);
+            }
+
+            // ─────────────────────────────────────────────────────────────
+            // 2. WINDING GRAND RIVER WITH ARMED FLY-UNDER BRIDGES
+            // ─────────────────────────────────────────────────────────────
+            const riverGroup = new THREE.Group();
+
+            // ── PROCEDURAL RIVER TEXTURES ──
+            const riverCanvas = document.createElement('canvas');
+            riverCanvas.width = 512; riverCanvas.height = 512;
+            const rCtx = riverCanvas.getContext('2d');
+            rCtx.fillStyle = '#084869';
+            rCtx.fillRect(0, 0, 512, 512);
+
+            // Water current ripples and caustics
+            rCtx.strokeStyle = '#38bdf8';
+            rCtx.lineWidth = 2.5;
+            rCtx.globalAlpha = 0.32;
+            for (let y = 0; y < 512; y += 10) {
+                rCtx.beginPath();
+                for (let x = 0; x <= 512; x += 10) {
+                    const ny = y + Math.sin(x * 0.045) * 4.5 + Math.cos(x * 0.08) * 2;
+                    if (x === 0) rCtx.moveTo(x, ny);
+                    else rCtx.lineTo(x, ny);
+                }
+                rCtx.stroke();
+            }
+
+            // Rapid foam sparkles
+            rCtx.fillStyle = '#f0f9ff';
+            rCtx.globalAlpha = 0.22;
+            for (let f = 0; f < 35; f++) {
+                rCtx.fillRect(Math.random() * 512, Math.random() * 512, 12 + Math.random() * 32, 2);
+            }
+            riverWaterTex = new THREE.CanvasTexture(riverCanvas);
+            riverWaterTex.wrapS = THREE.RepeatWrapping;
+            riverWaterTex.wrapT = THREE.RepeatWrapping;
+            riverWaterTex.repeat.set(2, 24);
+
+            // Ripple bump map
+            const bumpCanvas = document.createElement('canvas');
+            bumpCanvas.width = 256; bumpCanvas.height = 256;
+            const bCtx = bumpCanvas.getContext('2d');
+            bCtx.fillStyle = '#808080';
+            bCtx.fillRect(0, 0, 256, 256);
+            bCtx.strokeStyle = '#ffffff';
+            bCtx.lineWidth = 3;
+            bCtx.globalAlpha = 0.5;
+            for (let y = 0; y < 256; y += 8) {
+                bCtx.beginPath();
+                for (let x = 0; x <= 256; x += 8) {
+                    const ny = y + Math.sin(x * 0.07) * 3;
+                    if (x === 0) bCtx.moveTo(x, ny);
+                    else bCtx.lineTo(x, ny);
+                }
+                bCtx.stroke();
+            }
+            riverBumpTex = new THREE.CanvasTexture(bumpCanvas);
+            riverBumpTex.wrapS = THREE.RepeatWrapping;
+            riverBumpTex.wrapT = THREE.RepeatWrapping;
+            riverBumpTex.repeat.set(2, 24);
+
+            const riverWaterMat = new THREE.MeshStandardMaterial({
+                color: 0x0e7490, // Rich flowing mountain river turquoise
+                map: riverWaterTex,
+                bumpMap: riverBumpTex,
+                bumpScale: 0.35,
+                roughness: 0.08, // Real water specular gloss
+                metalness: 0.12,
+                transparent: true,
+                opacity: 0.90
+            });
+            // Natural riverbank shoreline (earthy gravel, silt, pebbles)
+            const riverBankMat = new THREE.MeshStandardMaterial({
+                color: 0x473828,
+                roughness: 0.94,
+                metalness: 0.06,
+                flatShading: true
+            });
+
+            // Curve formula for winding river (x varies along z)
+            function getRiverX(z) {
+                return 420 + Math.sin(z * 0.0018) * 110 + Math.cos(z * 0.0009) * 45;
+            }
+
+            const riverSteps = 54;
+            const stepLen = 5400 / riverSteps;
+            const rWidth = 46;
+
+            for (let i = 0; i < riverSteps; i++) {
+                const z1 = -2700 + i * stepLen;
+                const z2 = z1 + stepLen;
+                const midZ = (z1 + z2) / 2;
+                const midX = getRiverX(midZ);
+                const x1 = getRiverX(z1);
+                const x2 = getRiverX(z2);
+                const angle = Math.atan2(x2 - x1, stepLen);
+
+                // Water segment
+                const rGeom = new THREE.PlaneGeometry(rWidth, stepLen + 2);
+                rGeom.rotateX(-Math.PI / 2);
+                const rMesh = new THREE.Mesh(rGeom, riverWaterMat);
+                rMesh.position.set(midX, 0.08, midZ);
+                rMesh.rotation.y = angle;
+                riverGroup.add(rMesh);
+
+                // Natural riverbed & bank borders
+                const bGeom = new THREE.PlaneGeometry(rWidth + 12, stepLen + 2);
+                bGeom.rotateX(-Math.PI / 2);
+                const bMesh = new THREE.Mesh(bGeom, riverBankMat);
+                bMesh.position.set(midX, 0.05, midZ);
+                bMesh.rotation.y = angle;
+                riverGroup.add(bMesh);
+            }
+
+            // Two Arched Suspension Highway Bridges across the river (Fly underneath!)
+            const bridgeZ = [-850, 950];
+            const bridgeDeckMat = new THREE.MeshStandardMaterial({ color: 0x333b45, roughness: 0.7, metalness: 0.4 });
+            const bridgeArchMat = new THREE.MeshStandardMaterial({ color: 0xcc3322, roughness: 0.5, metalness: 0.6 }); // Red steel arch
+            const bridgeLightMat = new THREE.MeshBasicMaterial({ color: 0xffcc00, toneMapped: false });
+
+            bridgeZ.forEach(bz => {
+                const bx = getRiverX(bz);
+                const bridge = new THREE.Group();
+
+                // Highway Deck (y = 36 ft clearance - plenty of space for high-speed fly-under!)
+                const deckGeom = new THREE.BoxGeometry(86, 2.5, 14);
+                const deck = new THREE.Mesh(deckGeom, bridgeDeckMat);
+                deck.position.set(0, 36, 0);
+                bridge.add(deck);
+
+                // Massive Red Steel Arch
+                const archGeom = new THREE.TorusGeometry(38, 1.8, 8, 24, Math.PI);
+                archGeom.rotateZ(Math.PI);
+                const arch1 = new THREE.Mesh(archGeom, bridgeArchMat);
+                arch1.position.set(0, 36, 6.5);
+                bridge.add(arch1);
+                const arch2 = arch1.clone();
+                arch2.position.z = -6.5;
+                bridge.add(arch2);
+
+                // Vertical Suspension Cable Struts
+                const cableGeom = new THREE.CylinderGeometry(0.2, 0.2, 22, 6);
+                const cableMat = new THREE.MeshBasicMaterial({ color: 0xcccccc });
+                for (let cx = -28; cx <= 28; cx += 14) {
+                    const c1 = new THREE.Mesh(cableGeom, cableMat);
+                    c1.position.set(cx, 47, 6.5);
+                    bridge.add(c1);
+                    const c2 = c1.clone();
+                    c2.position.z = -6.5;
+                    bridge.add(c2);
+                }
+
+                // Bridge Deck Hazard Warning Lights
+                const bl = new THREE.Mesh(new THREE.SphereGeometry(0.6, 6, 6), bridgeLightMat);
+                bl.position.set(-42, 38, 0);
+                bridge.add(bl);
+                const br = bl.clone();
+                br.position.x = 42;
+                bridge.add(br);
+
+                bridge.position.set(bx, 0, bz);
+                riverGroup.add(bridge);
+            });
+
+            scene.add(riverGroup);
+
+            // ─────────────────────────────────────────────────────────────
+            // 3. GIANT BIG TREES (Majestic 42-55 unit tall Redwoods & Pines)
+            // ─────────────────────────────────────────────────────────────
+            const treeCount = 650;
+            const trunkGeom = new THREE.CylinderGeometry(1.6, 2.4, 22, 6);
+            trunkGeom.translate(0, 11, 0); // pivot at base
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4a2a16, roughness: 0.95, flatShading: true });
+
+            // Triple-tiered lush pine foliage
+            const foliage1Geom = new THREE.ConeGeometry(9.5, 16, 6);
+            foliage1Geom.translate(0, 20, 0);
+            const foliage2Geom = new THREE.ConeGeometry(7.5, 14, 6);
+            foliage2Geom.translate(0, 29, 0);
+            const foliage3Geom = new THREE.ConeGeometry(5.0, 11, 6);
+            foliage3Geom.translate(0, 37, 0);
+
+            const foliageMat = new THREE.MeshStandardMaterial({ color: 0x194d24, roughness: 0.88, flatShading: true });
+            const foliageDarkMat = new THREE.MeshStandardMaterial({ color: 0x13381a, roughness: 0.9, flatShading: true });
+
+            const treeTrunkInst = new THREE.InstancedMesh(trunkGeom, trunkMat, treeCount);
+            const treeFoliage1Inst = new THREE.InstancedMesh(foliage1Geom, foliageMat, treeCount);
+            const treeFoliage2Inst = new THREE.InstancedMesh(foliage2Geom, foliageDarkMat, treeCount);
+            const treeFoliage3Inst = new THREE.InstancedMesh(foliage3Geom, foliageMat, treeCount);
+
             let placedTrees = 0;
             while (placedTrees < treeCount) {
-                const tx = (Math.random() - 0.5) * 1900;
-                const tz = (Math.random() - 0.5) * 3500;
-                
-                // Exclude entire airbase zone (runway, apron, taxiways, hangars, depot, river)
-                if (isAirbaseZone(tx, tz)) continue;
+                // Concentrate forests in valley between runway & river, around mountain foothills
+                const tx = (pseudoRandom() - 0.5) * 3200;
+                const tz = (pseudoRandom() - 0.5) * 5000;
 
-                const scale = 0.7 + Math.random() * 0.5;
+                // Keep airbase runway, hangars, and metropolis core clear
+                if (Math.abs(tx) < 45) continue;
+                if (tx >= 15 && tx <= 115 && tz >= -350 && tz <= 300) continue;
+                if (tx > 600 && tx < 1550 && Math.abs(tz) < 1300) continue; // City zone
+                if (Math.abs(tx - getRiverX(tz)) < 30) continue; // Don't plant inside water
+
+                const scale = 0.8 + pseudoRandom() * 0.5; // Big scale: 35 to 55 units tall!
                 dummy.position.set(tx, 0, tz);
                 dummy.scale.set(scale, scale, scale);
-                dummy.rotation.y = Math.random() * Math.PI;
+                dummy.rotation.set(0, pseudoRandom() * Math.PI * 2, 0); // Stand straight and vertical
                 dummy.updateMatrix();
 
-                treeTrunkInstances.setMatrixAt(placedTrees, dummy.matrix);
-                treeFoliageInstances.setMatrixAt(placedTrees, dummy.matrix);
+                treeTrunkInst.setMatrixAt(placedTrees, dummy.matrix);
+                treeFoliage1Inst.setMatrixAt(placedTrees, dummy.matrix);
+                treeFoliage2Inst.setMatrixAt(placedTrees, dummy.matrix);
+                treeFoliage3Inst.setMatrixAt(placedTrees, dummy.matrix);
                 placedTrees++;
             }
-            scene.add(treeTrunkInstances);
-            scene.add(treeFoliageInstances);
+            scene.add(treeTrunkInst);
+            scene.add(treeFoliage1Inst);
+            scene.add(treeFoliage2Inst);
+            scene.add(treeFoliage3Inst);
 
-            // 3. Floating Procedural Clouds
-            const cloudCount = 60; // Increased clouds for larger map
-            const sphereGeom = new THREE.DodecahedronGeometry(6, 1);
+            // ─────────────────────────────────────────────────────────────
+            // 4. LOW-ALTITUDE CANYON FOG & VOLUMETRIC CLOUDS
+            // ─────────────────────────────────────────────────────────────
+            // Valley Fog Banks inside the mountain passes (Fly through thick mist!)
+            const fogBankGeom = new THREE.BoxGeometry(180, 24, 400);
+            const fogBankMat = new THREE.MeshBasicMaterial({
+                color: 0x99c9eb,
+                transparent: true,
+                opacity: 0.22,
+                depthWrite: false
+            });
+
+            // Mist bank in Titan Canyon
+            const mist1 = new THREE.Mesh(fogBankGeom, fogBankMat);
+            mist1.position.set(-1050, 18, -320);
+            scene.add(mist1);
+
+            // Mist bank in Shadow Valley
+            const mist2 = new THREE.Mesh(fogBankGeom, fogBankMat);
+            mist2.position.set(-1100, 18, 980);
+            scene.add(mist2);
+
+            // River basin morning fog
+            const mistRiverGeom = new THREE.BoxGeometry(80, 16, 800);
+            const mist3 = new THREE.Mesh(mistRiverGeom, fogBankMat);
+            mist3.position.set(430, 10, -1200);
+            scene.add(mist3);
+
+            // Layered Fluffy Cumulus Clouds (Altitude 180 to 320)
+            const cloudCount = 75;
+            const cloudSphereGeom = new THREE.DodecahedronGeometry(8, 1);
             const cloudMat = new THREE.MeshStandardMaterial({
                 color: 0xffffff,
                 roughness: 0.95,
                 metalness: 0.05,
                 transparent: true,
-                opacity: 0.8,
+                opacity: 0.85,
                 flatShading: true
             });
 
             for (let i = 0; i < cloudCount; i++) {
                 const cloud = new THREE.Group();
-                const numSpheres = 4 + Math.floor(Math.random() * 3);
+                const numSpheres = 5 + Math.floor(pseudoRandom() * 4);
                 for (let j = 0; j < numSpheres; j++) {
-                    const sp = new THREE.Mesh(sphereGeom, cloudMat);
+                    const sp = new THREE.Mesh(cloudSphereGeom, cloudMat);
                     sp.scale.set(
-                        1 + Math.random() * 0.4,
-                        0.6 + Math.random() * 0.3,
-                        1 + Math.random() * 0.4
+                        1.2 + pseudoRandom() * 0.5,
+                        0.7 + pseudoRandom() * 0.4,
+                        1.2 + pseudoRandom() * 0.5
                     );
                     sp.position.set(
-                        (Math.random() - 0.5) * 9,
-                        (Math.random() - 0.5) * 3,
-                        (Math.random() - 0.5) * 9
+                        (pseudoRandom() - 0.5) * 14,
+                        (pseudoRandom() - 0.5) * 5,
+                        (pseudoRandom() - 0.5) * 14
                     );
                     cloud.add(sp);
                 }
-                
-                const cx = (Math.random() - 0.5) * 1900;
-                const cy = 70 + Math.random() * 55;
-                const cz = (Math.random() - 0.5) * 3500;
-                
+
+                const cx = (pseudoRandom() - 0.5) * 3400;
+                const cy = 180 + pseudoRandom() * 120;
+                const cz = (pseudoRandom() - 0.5) * 5000;
                 cloud.position.set(cx, cy, cz);
                 scene.add(cloud);
                 clouds.push(cloud);
@@ -2256,13 +2679,14 @@
         }
         createEnvironment();
 
-        // 4. Procedural High-Tech Cyber Metropolis Skyline
-        const buildingBeacons = [];
+        // ─────────────────────────────────────────────────────────────
+        // 5. NEO-METROPOLIS CYBER CITY (Clustered Densely on East Side!)
+        // ─────────────────────────────────────────────────────────────
         function createSkyscrapers() {
-            const buildingCount = 115;
+            const buildingCount = 135;
             const boxGeom = new THREE.BoxGeometry(1, 1, 1);
-            
-            // PBR Architectural Materials
+
+            // Architectural PBR Materials
             const bodyMat = new THREE.MeshStandardMaterial({
                 color: 0x141a24,
                 roughness: 0.35,
@@ -2276,123 +2700,151 @@
                 flatShading: true
             });
 
-            // Vivid Sci-Fi Neon Emissive Materials
+            // Vivid Neon Emissive Materials
             const cyanWindowMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, toneMapped: false });
             const magentaWindowMat = new THREE.MeshBasicMaterial({ color: 0xff00bb, toneMapped: false });
             const amberWindowMat = new THREE.MeshBasicMaterial({ color: 0xffaa00, toneMapped: false });
             const beaconMat = new THREE.MeshBasicMaterial({ color: 0xff0033, toneMapped: false });
             const helipadMat = new THREE.MeshBasicMaterial({ color: 0x00ffaa, side: THREE.DoubleSide, toneMapped: false });
+            const bridgeMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.5, metalness: 0.8 });
 
             // Reusable geometries
-            const spireGeom = new THREE.CylinderGeometry(0.12, 0.45, 12, 6);
-            const beaconSphereGeom = new THREE.SphereGeometry(0.55, 6, 6);
-            const helipadGeom = new THREE.RingGeometry(2.5, 4.8, 16);
+            const spireGeom = new THREE.CylinderGeometry(0.18, 0.6, 16, 6);
+            const beaconSphereGeom = new THREE.SphereGeometry(0.7, 6, 6);
+            const helipadGeom = new THREE.RingGeometry(3.5, 6.5, 16);
             helipadGeom.rotateX(-Math.PI / 2);
             const hexCylGeom = new THREE.CylinderGeometry(1, 1, 1, 6);
 
-            for (let i = 0; i < buildingCount; i++) {
-                // Scatter across terrain while keeping airbase zone, runway, apron, and depot 100% clear!
-                let bx, bz;
-                do {
-                    bx = (Math.random() - 0.5) * 1800;
-                    bz = (Math.random() - 0.5) * 3400;
-                } while (isAirbaseZone(bx, bz));
+            // City Grid bounds on East Flank (x: 650 to 1550, z: -1400 to 1400)
+            const gridCols = 9;
+            const gridRows = 15;
+            const colSpacing = 100;
+            const rowSpacing = 180;
 
-                // Scale variables
-                const w = 15 + Math.random() * 20;
-                const h = 32 + Math.random() * 75; // Heights up to 107 units
-                const d = 15 + Math.random() * 20;
+            let placedCount = 0;
+            const buildingPositions = [];
 
-                const building = new THREE.Group();
-                const archetype = i % 3; // 0: Tiered Spire, 1: Hexagonal HQ, 2: Helipad Monolith
+            for (let c = 0; c < gridCols && placedCount < buildingCount; c++) {
+                for (let r = 0; r < gridRows && placedCount < buildingCount; r++) {
+                    const bx = 650 + c * colSpacing + (Math.random() - 0.5) * 20;
+                    const bz = -1260 + r * rowSpacing + (Math.random() - 0.5) * 30;
 
-                if (archetype === 0) {
-                    // --- ARCHETYPE 0: TIERED CYBER SPIRE WITH RED WARNING BEACON ---
-                    const baseH = h * 0.55;
-                    const baseBlock = new THREE.Mesh(boxGeom, bodyMat);
-                    baseBlock.scale.set(w, baseH, d);
-                    baseBlock.position.y = baseH / 2;
-                    building.add(baseBlock);
+                    // Building Dimensions (Tall, impressive skyline: heights up to 240 units!)
+                    const w = 22 + Math.random() * 26;
+                    const h = 55 + Math.random() * 185;
+                    const d = 22 + Math.random() * 26;
 
-                    const topH = h * 0.45;
-                    const topW = w * 0.65;
-                    const topD = d * 0.65;
-                    const topBlock = new THREE.Mesh(boxGeom, darkBodyMat);
-                    topBlock.scale.set(topW, topH, topD);
-                    topBlock.position.y = baseH + topH / 2;
-                    building.add(topBlock);
+                    buildingPositions.push({ x: bx, y: h, z: bz, w: w, d: d });
 
-                    // Glowing floor rings
-                    const winMat = (i % 2 === 0) ? cyanWindowMat : magentaWindowMat;
-                    const floors = 3 + Math.floor(Math.random() * 3);
-                    for (let f = 0; f < floors; f++) {
-                        const fy = (baseH / (floors + 1)) * (f + 1);
-                        const ringGeom = new THREE.BoxGeometry(w + 0.3, 1.2, d + 0.3);
-                        const ring = new THREE.Mesh(ringGeom, winMat);
-                        ring.position.set(0, fy, 0);
-                        building.add(ring);
+                    const building = new THREE.Group();
+                    const archetype = placedCount % 3;
+
+                    if (archetype === 0) {
+                        // --- ARCHETYPE 0: TIERED SPIRE WITH AVIATION BEACON ---
+                        const baseH = h * 0.55;
+                        const baseBlock = new THREE.Mesh(boxGeom, bodyMat);
+                        baseBlock.scale.set(w, baseH, d);
+                        baseBlock.position.y = baseH / 2;
+                        building.add(baseBlock);
+
+                        const topH = h * 0.45;
+                        const topW = w * 0.65;
+                        const topD = d * 0.65;
+                        const topBlock = new THREE.Mesh(boxGeom, darkBodyMat);
+                        topBlock.scale.set(topW, topH, topD);
+                        topBlock.position.y = baseH + topH / 2;
+                        building.add(topBlock);
+
+                        // Glowing floor bands
+                        const winMat = (placedCount % 2 === 0) ? cyanWindowMat : magentaWindowMat;
+                        const floors = 4 + Math.floor(Math.random() * 4);
+                        for (let f = 0; f < floors; f++) {
+                            const fy = (baseH / (floors + 1)) * (f + 1);
+                            const ring = new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, 1.4, d + 0.4), winMat);
+                            ring.position.set(0, fy, 0);
+                            building.add(ring);
+                        }
+
+                        // Rooftop Antenna Mast & Hazard Beacon
+                        const mast = new THREE.Mesh(spireGeom, darkBodyMat);
+                        mast.position.set(0, h + 8, 0);
+                        building.add(mast);
+
+                        const beacon = new THREE.Mesh(beaconSphereGeom, beaconMat);
+                        beacon.position.set(0, h + 16, 0);
+                        building.add(beacon);
+                        buildingBeacons.push(beacon);
+
+                    } else if (archetype === 1) {
+                        // --- ARCHETYPE 1: HEXAGONAL MEGA-CORP TOWER ---
+                        const radius = w * 0.55;
+                        const hexTower = new THREE.Mesh(hexCylGeom, bodyMat);
+                        hexTower.scale.set(radius, h, radius);
+                        hexTower.position.y = h / 2;
+                        building.add(hexTower);
+
+                        // Vertical Neon Laser Fins
+                        const stripeMat = (placedCount % 2 === 0) ? cyanWindowMat : amberWindowMat;
+                        const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.8, h * 0.88, radius * 2.05), stripeMat);
+                        stripe.position.y = h / 2;
+                        building.add(stripe);
+
+                        // Rooftop Neon Crown
+                        const roofCrown = new THREE.Mesh(new THREE.BoxGeometry(radius * 1.6, 1.8, radius * 1.6), magentaWindowMat);
+                        roofCrown.position.y = h + 0.9;
+                        building.add(roofCrown);
+
+                        const beacon = new THREE.Mesh(beaconSphereGeom, beaconMat);
+                        beacon.position.set(0, h + 3, 0);
+                        building.add(beacon);
+                        buildingBeacons.push(beacon);
+
+                    } else {
+                        // --- ARCHETYPE 2: ROOFTOP HELIPAD TOWER ---
+                        const monolith = new THREE.Mesh(boxGeom, bodyMat);
+                        monolith.scale.set(w, h, d);
+                        monolith.position.y = h / 2;
+                        building.add(monolith);
+
+                        const winMat = (placedCount % 2 === 0) ? cyanWindowMat : amberWindowMat;
+                        const floors = 5;
+                        for (let f = 0; f < floors; f++) {
+                            const fy = (h / (floors + 1)) * (f + 1);
+                            const band = new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, 1.1, d + 0.4), winMat);
+                            band.position.set(0, fy, 0);
+                            building.add(band);
+                        }
+
+                        // Illuminated Helipad
+                        const helipad = new THREE.Mesh(helipadGeom, helipadMat);
+                        helipad.position.set(0, h + 0.2, 0);
+                        building.add(helipad);
                     }
 
-                    // Rooftop Radio Mast & Pulsing Aviation Hazard Beacon
-                    const mast = new THREE.Mesh(spireGeom, darkBodyMat);
-                    mast.position.set(0, h + 6, 0);
-                    building.add(mast);
-
-                    const beacon = new THREE.Mesh(beaconSphereGeom, beaconMat);
-                    beacon.position.set(0, h + 12.2, 0);
-                    building.add(beacon);
-                    buildingBeacons.push(beacon);
-
-                } else if (archetype === 1) {
-                    // --- ARCHETYPE 1: CORPORATE HEXAGONAL MEGA-TOWER ---
-                    const radius = w * 0.55;
-                    const hexTower = new THREE.Mesh(hexCylGeom, bodyMat);
-                    hexTower.scale.set(radius, h, radius);
-                    hexTower.position.y = h / 2;
-                    building.add(hexTower);
-
-                    // Vertical neon accent stripes
-                    const stripeMat = (i % 2 === 0) ? cyanWindowMat : amberWindowMat;
-                    const stripeGeom = new THREE.BoxGeometry(0.6, h * 0.85, radius * 2.05);
-                    const stripe = new THREE.Mesh(stripeGeom, stripeMat);
-                    stripe.position.y = h / 2;
-                    building.add(stripe);
-
-                    // Rooftop perimeter halo ring
-                    const roofHaloGeom = new THREE.BoxGeometry(radius * 1.6, 1.4, radius * 1.6);
-                    const roofHalo = new THREE.Mesh(roofHaloGeom, magentaWindowMat);
-                    roofHalo.position.y = h + 0.7;
-                    building.add(roofHalo);
-
-                } else {
-                    // --- ARCHETYPE 2: ROOFTOP HELIPAD & HOLO-PANEL TOWER ---
-                    const monolith = new THREE.Mesh(boxGeom, bodyMat);
-                    monolith.scale.set(w, h, d);
-                    monolith.position.y = h / 2;
-                    building.add(monolith);
-
-                    // Neon floor bands
-                    const winMat = (i % 2 === 0) ? cyanWindowMat : amberWindowMat;
-                    const floors = 4;
-                    for (let f = 0; f < floors; f++) {
-                        const fy = (h / (floors + 1)) * (f + 1);
-                        const bandGeom = new THREE.BoxGeometry(w + 0.4, 0.9, d + 0.4);
-                        const band = new THREE.Mesh(bandGeom, winMat);
-                        band.position.set(0, fy, 0);
-                        building.add(band);
-                    }
-
-                    // Glowing Helipad circle on roof
-                    const helipad = new THREE.Mesh(helipadGeom, helipadMat);
-                    helipad.position.set(0, h + 0.15, 0);
-                    building.add(helipad);
+                    building.position.set(bx, 0.1, bz);
+                    scene.add(building);
+                    placedCount++;
                 }
+            }
 
-                building.position.set(bx, 0.1, bz);
-                scene.add(building);
+            // High-Altitude Sky-Bridges connecting neighboring buildings (Fly over or dive under!)
+            const bridgeGeom = new THREE.BoxGeometry(colSpacing * 0.9, 3.5, 6);
+            for (let i = 0; i < 18; i++) {
+                const b1 = buildingPositions[Math.floor(Math.random() * buildingPositions.length)];
+                if (!b1 || b1.y < 90) continue;
+                const skyBridge = new THREE.Mesh(bridgeGeom, bridgeMat);
+                skyBridge.position.set(b1.x + colSpacing * 0.5, b1.y * 0.65, b1.z);
+                scene.add(skyBridge);
+
+                // Neon bridge walkway stripe
+                const walkStripe = new THREE.Mesh(new THREE.PlaneGeometry(colSpacing * 0.9, 1.2), cyanWindowMat);
+                walkStripe.rotateX(-Math.PI / 2);
+                walkStripe.position.set(b1.x + colSpacing * 0.5, b1.y * 0.65 + 1.8, b1.z);
+                scene.add(walkStripe);
             }
         }
         createSkyscrapers();
+
 
         // Keyboard & Mouse inputs
         let mouseX = 0;
@@ -2429,9 +2881,9 @@
             mouseY = Math.max(-1, Math.min(1, rawY));
             
             // Mouse controls target Pitch and target Roll
-            // UP IS UP, DOWN IS DOWN!
-            jetState.targetRoll = -mouseX * Math.PI * 0.45; // allows 81 degree banking!
-            jetState.targetPitch = mouseY * Math.PI * 0.28;  // Up = climb, Down = dive!
+            // mouse left (mouseX < 0) → negative roll → left bank → left wing descends ✓
+            jetState.targetRoll = mouseX * Math.PI * 0.45;
+            jetState.targetPitch = (jetState.invertMousePitch ? mouseY : -mouseY) * Math.PI * 0.28;
         });
 
         // Gently level out flight if mouse leaves the browser window (e.g. user goes to tabs)
@@ -2481,6 +2933,12 @@
         const keys = {};
         document.addEventListener('keydown', (e) => {
             keys[e.code] = true;
+            if (e.code === 'KeyI') {
+                jetState.invertMousePitch = !jetState.invertMousePitch;
+                try {
+                    localStorage.setItem('invertMousePitch', jetState.invertMousePitch ? 'true' : 'false');
+                } catch (err) {}
+            }
             if (e.code === 'Space') isFiringNormal = true;
             if (e.code === 'KeyC') {
                 jetState.cameraView = jetState.cameraView === 'chase' ? 'cockpit' : 'chase';
@@ -2564,8 +3022,8 @@
 
             mouseX = normX;
             mouseY = normY;
-            jetState.targetRoll = -normX * Math.PI * 0.45;
-            jetState.targetPitch = normY * Math.PI * 0.28;
+            jetState.targetRoll = normX * Math.PI * 0.45;
+            jetState.targetPitch = (jetState.invertMousePitch ? normY : -normY) * Math.PI * 0.28;
         }
 
         // Mobile Action Buttons Handlers
@@ -3870,8 +4328,8 @@
             bots.forEach(bot => {
                 let bx, bz;
                 do {
-                    bx = (Math.random() - 0.5) * 1600;
-                    bz = (Math.random() - 0.5) * 3000;
+                    bx = (Math.random() - 0.5) * 3200;
+                    bz = (Math.random() - 0.5) * 4800;
                 } while (Math.hypot(bx - (jet ? jet.position.x : 0), bz - (jet ? jet.position.z : 0)) < 1000);
 
                 bot.model.position.set(bx, 100 + Math.random() * 160, bz);
@@ -3879,15 +4337,16 @@
                 bot.data.position.y = bot.model.position.y;
                 bot.data.position.z = bz;
                 bot.aiDestination.set(
-                    (Math.random() - 0.5) * 1600,
+                    (Math.random() - 0.5) * 3200,
                     80 + Math.random() * 200,
-                    (Math.random() - 0.5) * 3000
+                    (Math.random() - 0.5) * 4800
                 );
                 bot.isCharging = false;
                 bot.chargeStartTime = 0;
                 bot.breakEndTime = performance.now() + 1000;
             });
         }
+
 
         // Leaderboard logic
         function toggleLeaderboard() {
@@ -3992,9 +4451,10 @@
                 // Spawn safely far from player's current position (> 1000 units)
                 let bx, bz;
                 do {
-                    bx = (Math.random() - 0.5) * 1600;
-                    bz = (Math.random() - 0.5) * 3000;
+                    bx = (Math.random() - 0.5) * 3200;
+                    bz = (Math.random() - 0.5) * 4800;
                 } while (Math.hypot(bx - (jet ? jet.position.x : 0), bz - (jet ? jet.position.z : 0)) < 1000);
+
 
                 const by = 95 + Math.random() * 180;
                 botJet.position.set(bx, by, bz);
@@ -4330,9 +4790,10 @@
                         
                         let rbx, rbz;
                         do {
-                            rbx = (Math.random() - 0.5) * 1600;
-                            rbz = (Math.random() - 0.5) * 3000;
+                            rbx = (Math.random() - 0.5) * 3200;
+                            rbz = (Math.random() - 0.5) * 4800;
                         } while (Math.hypot(rbx - (jet ? jet.position.x : 0), rbz - (jet ? jet.position.z : 0)) < 1000);
+
 
                         bot.model.position.set(rbx, 90 + Math.random() * 180, rbz);
                         bot.isCharging = false;
@@ -4447,6 +4908,14 @@
             // Animate ATC tower rotating radar antenna dish
             if (typeof atcRadarMesh !== 'undefined' && atcRadarMesh) {
                 atcRadarMesh.rotation.y += 0.035;
+            }
+
+            // Animate flowing river water current ripples
+            if (riverWaterTex) {
+                riverWaterTex.offset.y += 0.0022;
+            }
+            if (riverBumpTex) {
+                riverBumpTex.offset.y += 0.0022;
             }
 
             // Update explosion particles
@@ -4565,9 +5034,9 @@
                 // Horizontal controls (combine mouse targetRoll and keyboard A/D/Arrows)
                 let rollInput = jetState.targetRoll;
                 if (keys['KeyA'] || keys['ArrowLeft']) {
-                    rollInput = Math.min(rollInput + 0.4, Math.PI * 0.35);
+                    rollInput = Math.max(rollInput - 0.4, -Math.PI * 0.35); // negative = left bank, left wing descends
                 } else if (keys['KeyD'] || keys['ArrowRight']) {
-                    rollInput = Math.max(rollInput - 0.4, -Math.PI * 0.35);
+                    rollInput = Math.min(rollInput + 0.4, Math.PI * 0.35);  // positive = right bank, right wing descends
                 }
 
                 // Vertical controls (combine mouse targetPitch and keyboard ArrowUp/ArrowDown)
@@ -4588,9 +5057,11 @@
                 jetState.pitch += (pitchInput - jetState.pitch) * jetState.pitchSpeed;
                 jetState.roll += (rollInput - jetState.roll) * jetState.rollSpeed;
 
-                // Banking-turns: roll tilt directly influences yaw heading (100% free manual steering!)
+                // Banking-turns: negative roll = left bank (left wing DOWN) = jet turns LEFT
+                //                positive roll = right bank (right wing DOWN) = jet turns RIGHT
+                // yaw -= roll*rate: roll<0 → yaw increases → LEFT turn ✓  |  roll>0 → yaw decreases → RIGHT turn ✓
                 if (Math.abs(jetState.roll) > 0.05) {
-                    jetState.yaw += jetState.roll * jetState.yawRate;
+                    jetState.yaw -= jetState.roll * jetState.yawRate;
                 }
 
                 // Apply pitch/yaw/roll rotations to Quaternion

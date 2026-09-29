@@ -13,43 +13,43 @@
             id: 'falcon', name: 'Falcon', cost: 0, rarity: 'COMMON',
             color: 0x4488ff, bodyColor: 0x1a2d55,
             speed: 1.0, health: 1.0, damage: 1.0, boost: 1.0,
-            desc: 'The reliable starter. Balanced across all stats.',
+            desc: 'F-22 class air-superiority fighter. Balanced tactical performance.',
             svgColors: { body: '#4488ff', wing: '#1a2d55', cockpit: '#88ccff', glow: '#00aaff' }
         },
         {
             id: 'viper', name: 'Viper', cost: 200, rarity: 'UNCOMMON',
             color: 0x00ffcc, bodyColor: 0x004433,
             speed: 1.15, health: 0.9, damage: 1.1, boost: 1.15,
-            desc: 'Speed demon. Neon cyan paint. Lightweight armour.',
+            desc: 'Su-47 forward-swept wing interceptor. Razor agility & canard control.',
             svgColors: { body: '#00ffcc', wing: '#004433', cockpit: '#88ffee', glow: '#00ffaa' }
         },
         {
             id: 'phantom', name: 'Phantom', cost: 500, rarity: 'RARE',
             color: 0xcc00ff, bodyColor: 0x330033,
             speed: 0.95, health: 1.25, damage: 1.2, boost: 0.9,
-            desc: 'Heavy assault craft. Superior armour & firepower.',
+            desc: 'Heavy assault compound delta wing. Armored hull & quad missile pylons.',
             svgColors: { body: '#cc00ff', wing: '#330033', cockpit: '#ee88ff', glow: '#aa00ff' }
         },
         {
             id: 'raptor', name: 'Fire Raptor', cost: 1000, rarity: 'RARE',
             color: 0xff6600, bodyColor: 0x331100,
             speed: 1.2, health: 1.05, damage: 1.3, boost: 1.2,
-            desc: 'Blazing speed with high-yield missiles. Reckless but deadly.',
+            desc: 'Twin-engine strike fighter. Dual outward-canted tails & wingtip missiles.',
             svgColors: { body: '#ff6600', wing: '#331100', cockpit: '#ffaa44', glow: '#ff4400' }
         },
         {
             id: 'nova', name: 'Nova', cost: 2500, rarity: 'EPIC',
             color: 0xffee00, bodyColor: 0x333300,
             speed: 1.3, health: 1.15, damage: 1.35, boost: 1.3,
-            desc: 'Gold-tier elite. Top performance across all stats.',
+            desc: 'Hypersonic wave-rider. Mach 5+ chine lifting body & drooped wingtips.',
             svgColors: { body: '#ffee00', wing: '#333300', cockpit: '#fff488', glow: '#ffcc00' }
         },
         {
-            id: 'shadow', name: 'Shadow X', cost: 5000, rarity: 'LEGENDARY',
-            color: 0xff0066, bodyColor: 0x330011,
+            id: 'shadow', name: 'Shadow B-2', cost: 5000, rarity: 'LEGENDARY',
+            color: 0xff0066, bodyColor: 0x16181f,
             speed: 1.4, health: 1.3, damage: 1.5, boost: 1.4,
-            desc: 'Legendary. Maximum stats. The apex predator of the skies.',
-            svgColors: { body: '#ff0066', wing: '#330011', cockpit: '#ff88aa', glow: '#ff0044' }
+            desc: 'Legendary B-2 Stealth Bomber flying wing. Radar-invisible apex predator.',
+            svgColors: { body: '#ff0066', wing: '#16181f', cockpit: '#ff88aa', glow: '#ff0044' }
         }
     ];
 
